@@ -1,0 +1,4 @@
+name = "HerbCore"
+uuid = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
+authors = ["Jaap de Jong <jaapdejong15@gmail.com>"]
+version = "0.1.0"
