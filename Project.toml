@@ -2,3 +2,12 @@ name = "HerbCore"
 uuid = "2b23ba43-8213-43cb-b5ea-38c12b45bd45"
 authors = ["Jaap de Jong <jaapdejong15@gmail.com>"]
 version = "0.1.0"
+
+[compat]
+julia = "1.8"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
