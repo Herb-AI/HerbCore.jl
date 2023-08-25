@@ -54,6 +54,7 @@ struct HoleReference
 end
 
 
+RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
 """
 	RuleNode(ind::Int, children::Vector{AbstractRuleNode})
 
