@@ -1,5 +1,5 @@
 """
-Represents a context-sensitive grammar constraint.
-Implementations can be found in the Herb-AI/Constraints.jl repository.
+Represents a constraint for a [`ContextSensitiveGrammar`](@ref).
+Concrete implementations can be found in HerbConstraints.jl.
 """
 abstract type Constraint end

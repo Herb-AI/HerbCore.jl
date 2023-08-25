@@ -1,12 +1,28 @@
 """
-Type for representing expression trees.
+	AbstractRuleNode
+
+Abstract type for representing expression trees.
+Expression trees consist of [`RuleNode`](@ref)s and [`Hole`](@ref)s.
+
+- A [`RuleNode`](@ref) represents a certain production rule in the [`Grammar`](@ref).
+- A [`Hole`](@ref) is a placeholder where certain rules in the grammar still can be applied. 
 """
 abstract type AbstractRuleNode end
 
 
 """
-RuleNode
-Type for representing nodes in an expression tree.
+	RuleNode <: AbstractRuleNode
+
+A [`RuleNode`](@ref) represents a node in an expression tree.
+Each node corresponds to a certain rule in the [`Grammar`](@ref).
+A [`RuleNode`](@ref) consists of:
+
+- `ind`: The index of the rule in the [`Grammar`](@ref) which this node is representing.
+- `_val`: Field for storing immediately evaluated values
+- `children`: The children of this node in the expression tree
+
+!!! compat
+	Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
 mutable struct RuleNode <: AbstractRuleNode
 	ind::Int # index in grammar
@@ -14,6 +30,14 @@ mutable struct RuleNode <: AbstractRuleNode
 	children::Vector{AbstractRuleNode}
 end
 
+
+"""
+	Hole <: AbstractRuleNode
+
+A [`Hole`](@ref) is a placeholder where certain rules from the grammar can still be applied.
+The `domain` of a [`Hole`](@ref) defines which rules can be applied.
+The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. 
+"""
 mutable struct Hole <: AbstractRuleNode
 	domain::BitVector
 end
@@ -29,10 +53,31 @@ struct HoleReference
     path::Vector{Int}
 end
 
-RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
+
+"""
+	RuleNode(ind::Int, children::Vector{AbstractRuleNode})
+
+Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind` and `children` as subtrees.
+"""
 RuleNode(ind::Int, children::Vector{AbstractRuleNode}) = RuleNode(ind, nothing, children)
 RuleNode(ind::Int, children::Vector{RuleNode}) = RuleNode(ind, nothing, children)
 RuleNode(ind::Int, children::Vector{Hole}) = RuleNode(ind, nothing, children)
+
+
+"""
+	RuleNode(ind::Int, _val::Any)
+
+Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind`, 
+`_val` as immediately evaluated value and no children
+
+!!! warning
+	Only use this constructor if you are absolutely certain that a rule is terminal and cannot have children.
+	Use [`RuleNode(ind::Int, grammar::Grammar)`] for rules that might have children.
+	In general, [`Hole`](@ref)s should be used as a placeholder when the children of a node are not yet known.   
+
+!!! compat
+	Evaluate immediately functionality is not yet supported by most of Herb.jl.
+"""
 RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
     
 Base.:(==)(::RuleNode, ::Hole) = false
@@ -80,7 +125,9 @@ function Base.show(io::IO, node::Hole; separator=",", last_child::Bool=false)
 end
 
 """
-Return the number of vertices in the tree rooted at root.
+	Base.length(root::RuleNode)
+
+Return the number of nodes in the tree rooted at root.
 Holes don't count.
 """
 function Base.length(root::RuleNode)
@@ -92,20 +139,27 @@ function Base.length(root::RuleNode)
 end
 
 """
-Return the number of vertices in the tree rooted at root.
+	Base.length(root::RuleNode)
+
+Return the number of nodes in the tree rooted at root.
 Holes don't count.
 """
 Base.length(::Hole) = 0
 
+"""
+	Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool
 
+Compares two [`RuleNode`](@ref)s. Returns true if the left [`RuleNode`](@ref) is less than the right [`RuleNode`](@ref).
+Order is determined from the index of the [`RuleNode`](@ref)s. 
+If both [`RuleNode`](@ref)s have the same index, a depth-first search is 
+performed in both [`RuleNode`](@ref)s until nodes with a different index
+are found.
+"""
 Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(rn₁, rn₂) == -1
 
 
-"""
-Helper function for `Base.isless(::RuleNode, ::RuleNode)`
-Returns -1 if `rn₁ < rn₂`, 0 if `rn₁ == rn₂` and 1 if `rn₁ > rn₂`
-"""
 function _rulenode_compare(rn₁::RuleNode, rn₂::RuleNode)::Int
+	# Helper function for Base.isless
 	if rn₁.ind == rn₂.ind
 		for (c₁, c₂) ∈ zip(rn₁.children, rn₂.children)
 			comparison = _rulenode_compare(c₁, c₂)
@@ -125,10 +179,12 @@ _rulenode_compare(::Hole, ::Hole) = 0
 
 
 """
-Return the depth of the expression tree rooted at root.
-Holes don't count.
+	depth(root::RuleNode)::Int
+
+Return the depth of the [`AbstractRuleNode`](@ref) tree rooted at root.
+Holes don't count towards the depth.
 """
-function depth(root::RuleNode)
+function depth(root::RuleNode)::Int
 	retval = 1
 	for c in root.children
 	    retval = max(retval, depth(c)+1)
@@ -136,20 +192,20 @@ function depth(root::RuleNode)
 	return retval
 end
 
-
-"""
-Return the depth of the expression tree rooted at root.
-Holes don't count.
-"""
 depth(::Hole) = 0
 
 
 """
-Return the depth of node for an expression tree rooted at root. 
-Depth is 1 when root == node.
+	node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
+
+Return the depth of `node` for an [`AbstractRuleNode`](@ref) tree rooted at `root`.
+Depth is `1` when `root == node`.
+
+!!! warning
+	`node` must be a subtree of `root` in order for this function to work.
 """
-function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)
-	root === node && return 1
+function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
+	root ≡ node && return 1
 	root isa Hole && return 0
 	for c in root.children
 	    d = node_depth(c, node)
@@ -159,19 +215,21 @@ function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)
 end
 
 """
-Returns all rules of a specific type used in a RuleNode.
+	rulesoftype(node::RuleNode, ruleset::Set{Int})
+
+Returns every rule in the ruleset that is also used in the [`AbstractRuleNode`](@ref) tree.
 """
 function rulesoftype(node::RuleNode, ruleset::Set{Int})
 	retval = Set()
 
-	if node.ind in ruleset
+	if node.ind ∈ ruleset
 		union!(retval, [node.ind])
 	end
 
 	if isempty(node.children)
 		return retval
 	else
-		for child in node.children
+		for child ∈ node.children
 			union!(retval, rulesoftype(child, ruleset))
 		end
 
@@ -180,8 +238,10 @@ function rulesoftype(node::RuleNode, ruleset::Set{Int})
 end
 
 """
-Replace a node in expr, specified by path, with new_expr.
-Path is a sequence of child indices, starting from the node.
+	swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
+
+Replace a node in `expr`, specified by `path`, with `new_expr`.
+Path is a sequence of child indices, starting from the root node.
 """
 function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
 	if length(path) == 1
@@ -191,9 +251,10 @@ function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vec
 	end
 end
 
-
 """
-Replace child i of a node, a part of larger expr, with new_expr.
+	swap_node(expr::RuleNode, node::RuleNode, child_index::Int, new_expr::RuleNode)
+
+Replace child `i` of a node, a part of larger `expr`, with `new_expr`.
 """
 function swap_node(expr::RuleNode, node::RuleNode, child_index::Int, new_expr::RuleNode)
 	if expr == node 
@@ -207,7 +268,9 @@ end
 
 
 """
-Extract derivation sequence from path (sequence of child indices).
+	get_rulesequence(node::RuleNode, path::Vector{Int})
+
+Extract the derivation sequence from a path (sequence of child indices) and an [`AbstractRuleNode`](@ref).
 If the path is deeper than the deepest node, it returns what it has.
 """
 function get_rulesequence(node::RuleNode, path::Vector{Int})
@@ -231,7 +294,9 @@ end
 get_rulesequence(::Hole, ::Vector{Int}) = Vector{Int}()
 
 """
-Extracts rules in the left subtree defined by the path.
+	rulesonleft(expr::RuleNode, path::Vector{Int})::Set{Int}
+
+Finds all rules that are used in the left subtree defined by the path.
 """
 function rulesonleft(expr::RuleNode, path::Vector{Int})
 	if isempty(expr.children)
@@ -266,7 +331,9 @@ rulesonleft(h::Hole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 
 """
-Retrieves a rulenode at the original location by reference. 
+	get_node_at_location(root::RuleNode, location::Vector{Int})
+
+Retrieves a [`RuleNode`](@ref) at the given location by reference. 
 """
 function get_node_at_location(root::RuleNode, location::Vector{Int})
     if location == []
@@ -286,7 +353,9 @@ end
 
 
 """
-Checks if a rulenode tree contains a hole.
+	contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
+
+Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
 contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 contains_hole(hole::Hole) = true
