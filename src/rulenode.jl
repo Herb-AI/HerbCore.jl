@@ -9,6 +9,7 @@ Expression trees consist of [`RuleNode`](@ref)s and [`Hole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
+
 """
 	RuleNode <: AbstractRuleNode
 
@@ -29,6 +30,7 @@ mutable struct RuleNode <: AbstractRuleNode
 	children::Vector{AbstractRuleNode}
 end
 
+
 """
 	Hole <: AbstractRuleNode
 
@@ -40,17 +42,17 @@ mutable struct Hole <: AbstractRuleNode
 	domain::BitVector
 end
 
-"""
-	RuleNode(ind::Int)
 
-Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind` and without any children.
-
-!!! warning
-	Only use this constructor if you are absolutely certain that a rule is terminal and cannot have children.
-	Use [`RuleNode(ind::Int, grammar::Grammar)`] for rules that might have children.
-	In general, [`Hole`](@ref)s should be used as a placeholder when the children of a node are not yet known.   
 """
-RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
+	HoleReference
+
+Contains a hole and the path to the hole from the root of the tree.
+"""
+struct HoleReference
+    hole::Hole
+    path::Vector{Int}
+end
+
 
 """
 	RuleNode(ind::Int, children::Vector{AbstractRuleNode})
@@ -60,7 +62,6 @@ Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind` and 
 RuleNode(ind::Int, children::Vector{AbstractRuleNode}) = RuleNode(ind, nothing, children)
 RuleNode(ind::Int, children::Vector{RuleNode}) = RuleNode(ind, nothing, children)
 RuleNode(ind::Int, children::Vector{Hole}) = RuleNode(ind, nothing, children)
-
 
 
 """
@@ -87,6 +88,9 @@ Base.:(==)(A::RuleNode, B::RuleNode) =
 	all(isequal(a, b) for (a, b) ∈ zip(A.children, B.children))
 # We do not know how the holes will be expanded yet, so we cannot assume equality even if the domains are equal.
 Base.:(==)(A::Hole, B::Hole) = false
+
+Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
+Base.copy(h::Hole) = Hole(copy(h.domain))
 
 function Base.hash(node::RuleNode, h::UInt=zero(UInt))
 	retval = hash(node.ind, h)
@@ -323,7 +327,7 @@ function rulesonleft(expr::RuleNode, path::Vector{Int})
 	end
 end
 
-rulesonleft(::Hole, ::Vector{Int}) = Set{Int}()
+rulesonleft(h::Hole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 
 """
