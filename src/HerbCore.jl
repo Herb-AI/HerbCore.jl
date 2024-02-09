@@ -8,6 +8,8 @@ export
     AbstractRuleNode,
     RuleNode,
     Hole,
+    FixedShapedHole,
+    VariableShapedHole,
     HoleReference,
 
     depth,

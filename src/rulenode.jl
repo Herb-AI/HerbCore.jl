@@ -38,9 +38,31 @@ A [`Hole`](@ref) is a placeholder where certain rules from the grammar can still
 The `domain` of a [`Hole`](@ref) defines which rules can be applied.
 The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. 
 """
-mutable struct Hole <: AbstractRuleNode
+abstract type Hole <: AbstractRuleNode end
+
+"""
+FixedShapedHole <: Hole
+
+- `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. All rules in the domain are required to have the same childtypes.
+- `children`: The children of this hole in the expression tree.
+"""
+mutable struct FixedShapedHole <: Hole
+	domain::BitVector
+	children::Vector{AbstractRuleNode}
+end
+
+
+"""
+FixedShapedHole <: Hole
+
+- `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
+"""
+mutable struct VariableShapedHole <: Hole
 	domain::BitVector
 end
+
+
+Hole(domain::BitVector) = VariableShapedHole(domain)
 
 
 """
@@ -60,10 +82,7 @@ RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
 
 Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind` and `children` as subtrees.
 """
-RuleNode(ind::Int, children::Vector{AbstractRuleNode}) = RuleNode(ind, nothing, children)
-RuleNode(ind::Int, children::Vector{RuleNode}) = RuleNode(ind, nothing, children)
-RuleNode(ind::Int, children::Vector{Hole}) = RuleNode(ind, nothing, children)
-
+RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
 
 """
 	RuleNode(ind::Int, _val::Any)
