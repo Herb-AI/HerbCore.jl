@@ -4,7 +4,7 @@
 Abstract type for representing expression trees.
 Expression trees consist of [`RuleNode`](@ref)s and [`Hole`](@ref)s.
 
-- A [`RuleNode`](@ref) represents a certain production rule in the [`Grammar`](@ref).
+- A [`RuleNode`](@ref) represents a certain production rule in the [`AbstractGrammar`](@ref).
 - A [`Hole`](@ref) is a placeholder where certain rules in the grammar still can be applied. 
 """
 abstract type AbstractRuleNode end
@@ -14,10 +14,10 @@ abstract type AbstractRuleNode end
 	RuleNode <: AbstractRuleNode
 
 A [`RuleNode`](@ref) represents a node in an expression tree.
-Each node corresponds to a certain rule in the [`Grammar`](@ref).
+Each node corresponds to a certain rule in the [`AbstractGrammar`](@ref).
 A [`RuleNode`](@ref) consists of:
 
-- `ind`: The index of the rule in the [`Grammar`](@ref) which this node is representing.
+- `ind`: The index of the rule in the [`AbstractGrammar`](@ref) which this node is representing.
 - `_val`: Field for storing immediately evaluated values
 - `children`: The children of this node in the expression tree
 
@@ -58,7 +58,7 @@ RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
 """
 	RuleNode(ind::Int, children::Vector{AbstractRuleNode})
 
-Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind` and `children` as subtrees.
+Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `ind` and `children` as subtrees.
 """
 RuleNode(ind::Int, children::Vector{AbstractRuleNode}) = RuleNode(ind, nothing, children)
 RuleNode(ind::Int, children::Vector{RuleNode}) = RuleNode(ind, nothing, children)
@@ -68,12 +68,12 @@ RuleNode(ind::Int, children::Vector{Hole}) = RuleNode(ind, nothing, children)
 """
 	RuleNode(ind::Int, _val::Any)
 
-Create a [`RuleNode`](@ref) for the [`Grammar`](@ref) rule with index `ind`, 
+Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `ind`, 
 `_val` as immediately evaluated value and no children
 
 !!! warning
 	Only use this constructor if you are absolutely certain that a rule is terminal and cannot have children.
-	Use [`RuleNode(ind::Int, grammar::Grammar)`] for rules that might have children.
+	Use [`RuleNode(ind::Int, grammar::AbstractGrammar)`] for rules that might have children.
 	In general, [`Hole`](@ref)s should be used as a placeholder when the children of a node are not yet known.   
 
 !!! compat

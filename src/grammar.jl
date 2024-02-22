@@ -1,5 +1,5 @@
 """
-	Grammar
+	AbstractGrammar
 
 Abstract type representing all grammars.
 It is assumed that all grammar structs have at least the following attributes:
@@ -16,6 +16,6 @@ If a rule is terminal, the corresponding list is empty.
 - `log_probabilities::Union{Vector{Real}, Nothing}`: A list of probabilities for each rule. 
 If the grammar is non-probabilistic, the list can be `nothing`.
 
-For concrete types, see [`ContextFreeGrammar`](@ref) and [`ContextSensitiveGrammar`](@ref).
+For concrete types, see [`ContextSensitiveGrammar`](@ref) within the `HerbGrammar` module.
 """
-abstract type Grammar end
+abstract type AbstractGrammar end
