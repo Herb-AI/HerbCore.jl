@@ -20,6 +20,6 @@ export
     contains_hole,
 
     Constraint,
-    Grammar
+    AbstractGrammar
 
 end # module HerbCore
