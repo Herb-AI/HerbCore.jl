@@ -110,7 +110,8 @@ Base.:(==)(A::RuleNode, B::RuleNode) =
 Base.:(==)(A::Hole, B::Hole) = false
 
 Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
-Base.copy(h::Hole) = Hole(copy(h.domain))
+Base.copy(h::VariableShapedHole) = VariableShapedHole(copy(h.domain))
+Base.copy(h::FixedShapedHole) = FixedShapedHole(copy(h.domain), h.children)
 
 function Base.hash(node::RuleNode, h::UInt=zero(UInt))
 	retval = hash(node.ind, h)
@@ -150,7 +151,7 @@ end
 Return the number of nodes in the tree rooted at root.
 Holes don't count.
 """
-function Base.length(root::RuleNode)
+function Base.length(root::Union{RuleNode, FixedShapedHole})
 	retval = 1
 	for c in root.children
 	    retval += length(c)
@@ -164,7 +165,7 @@ end
 Return the number of nodes in the tree rooted at root.
 Holes don't count.
 """
-Base.length(::Hole) = 0
+Base.length(::VariableShapedHole) = 0
 
 """
 	Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool
@@ -379,3 +380,7 @@ Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
 contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 contains_hole(hole::Hole) = true
+
+get_children(rn::RuleNode)::Vector{AbstractRuleNode} = rn.children
+get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = []
+get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
