@@ -41,7 +41,7 @@ The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rul
 abstract type Hole <: AbstractRuleNode end
 
 """
-FixedShapedHole <: Hole
+	FixedShapedHole <: Hole
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. All rules in the domain are required to have the same childtypes.
 - `children`: The children of this hole in the expression tree.
@@ -53,7 +53,7 @@ end
 
 
 """
-FixedShapedHole <: Hole
+VariableShapedHole <: Hole
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
@@ -142,6 +142,19 @@ function Base.show(io::IO, node::Hole; separator=",", last_child::Bool=false)
 	print(io, "hole[$(node.domain)]")
 	if !last_child
 		print(io, separator)
+	end
+end
+
+function Base.show(io::IO, node::FixedShapedHole; separator=",", last_child::Bool=false)
+	print(io, "fshole[$(node.domain)]")
+	if !isempty(node.children)
+	    print(io, "{")
+	    for (i,c) in enumerate(node.children)
+		show(io, c, separator=separator, last_child=(i == length(node.children)))
+	    end
+	    print(io, "}")
+	elseif !last_child
+	    print(io, separator)
 	end
 end
 
@@ -356,7 +369,7 @@ rulesonleft(h::Hole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 Retrieves a [`RuleNode`](@ref) at the given location by reference. 
 """
-function get_node_at_location(root::RuleNode, location::Vector{Int})
+function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
     if location == []
         return root
     else
@@ -364,7 +377,7 @@ function get_node_at_location(root::RuleNode, location::Vector{Int})
     end
 end
 
-function get_node_at_location(root::Hole, location::Vector{Int})
+function get_node_at_location(root::VariableShapedHole, location::Vector{Int})
     if location == []
         return root
     end

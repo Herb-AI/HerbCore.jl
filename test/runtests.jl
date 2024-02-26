@@ -94,5 +94,12 @@ using Test
             # putting out of bounds indices returns the root
             @test get_rulesequence(rulenode, [100,4,1000]) == [1]
         end
+
+        @testset "get_node_at_location" begin
+            rulenode = FixedShapedHole(BitVector((1, 1, 0, 0)), [RuleNode(3), RuleNode(4)])
+            @test get_node_at_location(rulenode, Vector{Int64}()) isa FixedShapedHole
+            @test get_node_at_location(rulenode, [1]).ind == 3
+            @test get_node_at_location(rulenode, [2]).ind == 4
+        end
     end
 end
