@@ -20,6 +20,7 @@ export
     rulesonleft,
     get_node_at_location,
     contains_hole,
+    contains_variable_shaped_hole,
 
     Constraint,
     Grammar

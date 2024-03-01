@@ -385,7 +385,6 @@ function get_node_at_location(root::VariableShapedHole, location::Vector{Int})
 end
 
 
-
 """
 	contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 
@@ -393,6 +392,14 @@ Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
 contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 contains_hole(hole::Hole) = true
+
+"""
+	contains_variable_shaped_hole(rn::RuleNode)
+
+Checks if an [`AbstractRuleNode`](@ref) tree contains a [`VariableShapedHole`](@ref).
+"""
+contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c) for c ∈ rn.children)
+contains_variable_shaped_hole(hole::VariableShapedHole) = true
 
 get_children(rn::RuleNode)::Vector{AbstractRuleNode} = rn.children
 get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = []
