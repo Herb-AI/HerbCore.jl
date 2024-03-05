@@ -386,6 +386,25 @@ end
 
 
 """
+	get_node_path(root::AbstractRuleNode, node::AbstractRuleNode)
+
+Returns the path from the `root` to the `targetnode`. Returns nothing if no path exists.
+"""
+function get_node_path(root::AbstractRuleNode, targetnode::AbstractRuleNode)::Union{Vector{Int}, Nothing}
+	if root === targetnode
+		return Vector{Int}()
+	end
+	for (i, child) ∈ enumerate(get_children(root))
+		path = get_node_path(child, targetnode)
+		if !isnothing(path)
+			return prepend!(path, i)
+		end
+	end
+	return nothing
+end
+
+
+"""
 	contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 
 Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).

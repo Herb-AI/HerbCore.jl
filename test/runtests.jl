@@ -101,5 +101,23 @@ using Test
             @test get_node_at_location(rulenode, [1]).ind == 3
             @test get_node_at_location(rulenode, [2]).ind == 4
         end
+
+        @testset "get_node_path" begin
+            n1 = RuleNode(1)
+            n2 = RuleNode(2)
+            n3 = FixedShapedHole(BitVector((1, 1, 1)), [RuleNode(1), n2])
+            n4 = RuleNode(1)
+            root = RuleNode(4, [
+                RuleNode(4, [
+                    n1,
+                    RuleNode(1)
+                ]),
+                n3
+            ])
+            @test get_node_path(root, n1) == [1, 1]
+            @test get_node_path(root, n2) == [2, 2]
+            @test get_node_path(root, n3) == [2]
+            @test isnothing(get_node_path(root, n4))
+        end
     end
 end

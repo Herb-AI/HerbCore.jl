@@ -19,6 +19,7 @@ export
     get_rulesequence,
     rulesonleft,
     get_node_at_location,
+    get_node_path,
     contains_hole,
     contains_variable_shaped_hole,
 
