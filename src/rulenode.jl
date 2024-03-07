@@ -173,12 +173,12 @@ function Base.length(root::Union{RuleNode, FixedShapedHole})
 end
 
 """
-	Base.length(root::RuleNode)
+	Base.length(root::VariableShapedHole)
 
 Return the number of nodes in the tree rooted at root.
-Holes don't count.
+Holes do count.
 """
-Base.length(::VariableShapedHole) = 0
+Base.length(::VariableShapedHole) = 1
 
 """
 	Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool
@@ -216,9 +216,9 @@ _rulenode_compare(::Hole, ::Hole) = 0
 	depth(root::RuleNode)::Int
 
 Return the depth of the [`AbstractRuleNode`](@ref) tree rooted at root.
-Holes don't count towards the depth.
+Holes don count towards the depth.
 """
-function depth(root::RuleNode)::Int
+function depth(root::AbstractRuleNode)::Int
 	retval = 1
 	for c in root.children
 	    retval = max(retval, depth(c)+1)
@@ -226,7 +226,7 @@ function depth(root::RuleNode)::Int
 	return retval
 end
 
-depth(::Hole) = 0
+depth(::VariableShapedHole) = 1
 
 
 """
@@ -240,7 +240,7 @@ Depth is `1` when `root == node`.
 """
 function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
 	root ≡ node && return 1
-	root isa Hole && return 0
+	root isa VariableShapedHole && return 1
 	for c in root.children
 	    d = node_depth(c, node)
 	    d > 0 && (return d+1)

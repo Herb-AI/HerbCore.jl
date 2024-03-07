@@ -119,5 +119,21 @@ using Test
             @test get_node_path(root, n3) == [2]
             @test isnothing(get_node_path(root, n4))
         end
+
+        @testset "Length tests with holes" begin
+            domain=BitVector((1, 1))
+            @test length(FixedShapedHole(domain, [])) == 1
+            @test length(FixedShapedHole(domain, [RuleNode(2)])) == 2
+            @test length(RuleNode(1,[RuleNode(2, [Hole(domain), RuleNode(4)])])) == 4
+            @test length(FixedShapedHole(domain,[RuleNode(2, [RuleNode(4), RuleNode(4)])])) == 4
+        end
+
+        @testset "Depth tests with holes" begin 
+            domain=BitVector((1, 1))
+            @test depth(FixedShapedHole(domain, [])) == 1
+            @test depth(FixedShapedHole(domain, [RuleNode(2)])) == 2
+            @test depth(RuleNode(1,[RuleNode(2, [Hole(domain), RuleNode(4)])])) == 3
+            @test depth(FixedShapedHole(domain,[RuleNode(2, [RuleNode(4), RuleNode(4)])])) == 3
+        end
     end
 end
