@@ -135,5 +135,18 @@ using Test
             @test depth(RuleNode(1,[RuleNode(2, [Hole(domain), RuleNode(4)])])) == 3
             @test depth(FixedShapedHole(domain,[RuleNode(2, [RuleNode(4), RuleNode(4)])])) == 3
         end
+
+        @testset "number_of_holes" begin
+            domain=BitVector((1, 1))
+            @test number_of_holes(RuleNode(1)) == 0
+            @test number_of_holes(VariableShapedHole(domain)) == 1
+            @test number_of_holes(FixedShapedHole(domain, [RuleNode(1), RuleNode(1)])) == 1
+            @test number_of_holes(FixedShapedHole(domain, [VariableShapedHole(domain), RuleNode(1)])) == 2
+            @test number_of_holes(RuleNode(2, [VariableShapedHole(domain), RuleNode(1)])) == 1
+            @test number_of_holes(FixedShapedHole(domain, [
+                VariableShapedHole(domain),
+                FixedShapedHole(domain, [VariableShapedHole(domain), RuleNode(1)])
+            ])) == 4
+        end
     end
 end

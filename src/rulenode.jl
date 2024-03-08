@@ -405,6 +405,16 @@ end
 
 
 """
+    number_of_holes(rn::AbstractRuleNode)::Int
+
+Recursively counts the number of holes in an [`AbstractRuleNode`](@ref)
+"""
+number_of_holes(rn::RuleNode) = reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
+number_of_holes(rn::FixedShapedHole) = 1 + reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
+number_of_holes(rn::VariableShapedHole) = 1
+
+
+"""
 	contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 
 Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
