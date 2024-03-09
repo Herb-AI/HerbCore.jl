@@ -23,6 +23,7 @@ export
     number_of_holes,
     contains_hole,
     contains_variable_shaped_hole,
+    get_children,
 
     Constraint,
     Grammar
