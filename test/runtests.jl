@@ -94,5 +94,59 @@ using Test
             # putting out of bounds indices returns the root
             @test get_rulesequence(rulenode, [100,4,1000]) == [1]
         end
+
+        @testset "get_node_at_location" begin
+            rulenode = FixedShapedHole(BitVector((1, 1, 0, 0)), [RuleNode(3), RuleNode(4)])
+            @test get_node_at_location(rulenode, Vector{Int64}()) isa FixedShapedHole
+            @test get_node_at_location(rulenode, [1]).ind == 3
+            @test get_node_at_location(rulenode, [2]).ind == 4
+        end
+
+        @testset "get_node_path" begin
+            n1 = RuleNode(1)
+            n2 = RuleNode(2)
+            n3 = FixedShapedHole(BitVector((1, 1, 1)), [RuleNode(1), n2])
+            n4 = RuleNode(1)
+            root = RuleNode(4, [
+                RuleNode(4, [
+                    n1,
+                    RuleNode(1)
+                ]),
+                n3
+            ])
+            @test get_node_path(root, n1) == [1, 1]
+            @test get_node_path(root, n2) == [2, 2]
+            @test get_node_path(root, n3) == [2]
+            @test isnothing(get_node_path(root, n4))
+        end
+
+        @testset "Length tests with holes" begin
+            domain=BitVector((1, 1))
+            @test length(FixedShapedHole(domain, [])) == 1
+            @test length(FixedShapedHole(domain, [RuleNode(2)])) == 2
+            @test length(RuleNode(1,[RuleNode(2, [Hole(domain), RuleNode(4)])])) == 4
+            @test length(FixedShapedHole(domain,[RuleNode(2, [RuleNode(4), RuleNode(4)])])) == 4
+        end
+
+        @testset "Depth tests with holes" begin 
+            domain=BitVector((1, 1))
+            @test depth(FixedShapedHole(domain, [])) == 1
+            @test depth(FixedShapedHole(domain, [RuleNode(2)])) == 2
+            @test depth(RuleNode(1,[RuleNode(2, [Hole(domain), RuleNode(4)])])) == 3
+            @test depth(FixedShapedHole(domain,[RuleNode(2, [RuleNode(4), RuleNode(4)])])) == 3
+        end
+
+        @testset "number_of_holes" begin
+            domain=BitVector((1, 1))
+            @test number_of_holes(RuleNode(1)) == 0
+            @test number_of_holes(VariableShapedHole(domain)) == 1
+            @test number_of_holes(FixedShapedHole(domain, [RuleNode(1), RuleNode(1)])) == 1
+            @test number_of_holes(FixedShapedHole(domain, [VariableShapedHole(domain), RuleNode(1)])) == 2
+            @test number_of_holes(RuleNode(2, [VariableShapedHole(domain), RuleNode(1)])) == 1
+            @test number_of_holes(FixedShapedHole(domain, [
+                VariableShapedHole(domain),
+                FixedShapedHole(domain, [VariableShapedHole(domain), RuleNode(1)])
+            ])) == 4
+        end
     end
 end
