@@ -430,6 +430,43 @@ Checks if an [`AbstractRuleNode`](@ref) tree contains a [`VariableShapedHole`](@
 contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c) for c ∈ rn.children)
 contains_variable_shaped_hole(hole::VariableShapedHole) = true
 
+"""
+	get_children(rn::AbstractRuleNode)
+
+Returns the children of the given [`AbstractRuleNode`](@ref)
+"""
 get_children(rn::RuleNode)::Vector{AbstractRuleNode} = rn.children
 get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = []
 get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
+
+"""
+	has_children(rn::AbstractRuleNode)
+
+Returns true if the [`AbstractRuleNode`](@ref) has 1 or more children.
+"""
+has_children(rn::RuleNode)::Bool = (length(rn.children) > 0)
+has_children(::VariableShapedHole)::Bool = false
+has_children(hole::FixedShapedHole)::Bool = (length(hole.children) > 0)
+
+"""
+	isfilled(node::AbstractRuleNode)::Bool
+
+Returns whether the [`AbstractRuleNode`] holds a single rule.
+Holes are considered to be "filled" iff their domain size is exactly 1.
+"""
+isfilled(rn::RuleNode)::Bool = true
+isfilled(hole::FixedShapedHole)::Bool = (sum(hole.domain) == 1)
+isfilled(hole::VariableShapedHole)::Bool = (sum(hole.domain) == 1)
+
+
+"""
+	get_rule(rn::AbstractRuleNode)
+
+Returns the index of the rule that this [`AbstractRuleNode`](@ref) represents
+"""
+get_rule(rn::RuleNode) = rn.ind
+function get_rule(hole::Hole)
+	@assert isfilled(hole) "$(hole) is not filled, unable to get the rule"
+	return findfirst(hole.domain)
+end
+

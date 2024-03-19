@@ -24,6 +24,9 @@ export
     contains_hole,
     contains_variable_shaped_hole,
     get_children,
+    get_rule,
+    has_children,
+    isfilled,
 
     Constraint,
     Grammar
