@@ -216,7 +216,7 @@ _rulenode_compare(::Hole, ::Hole) = 0
 	depth(root::RuleNode)::Int
 
 Return the depth of the [`AbstractRuleNode`](@ref) tree rooted at root.
-Holes don count towards the depth.
+Holes do count towards the depth.
 """
 function depth(root::AbstractRuleNode)::Int
 	retval = 1
@@ -365,7 +365,7 @@ rulesonleft(h::Hole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 
 """
-	get_node_at_location(root::RuleNode, location::Vector{Int})
+	get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
 
 Retrieves a [`RuleNode`](@ref) at the given location by reference. 
 """
@@ -377,11 +377,16 @@ function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
     end
 end
 
+"""
+	get_node_at_location(root::VariableShapedHole, location::Vector{Int})
+
+Retrieves the current hole, if location is this very hole. Throws error otherwise.
+"""
 function get_node_at_location(root::VariableShapedHole, location::Vector{Int})
     if location == []
         return root
     end
-    return nothing
+	error("Node at the specified location not found.")
 end
 
 
