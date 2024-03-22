@@ -2,6 +2,13 @@
 	AbstractRuleNode
 
 Abstract type for representing expression trees.
+An AbstractRuleNode is expected to implement the following functions:
+
+- `isfilled(::AbstractRuleNode)::Bool`. True iff the grammar rule this node holds is not ambiguous.
+- `isfixedshaped(::AbstractRuleNode)::Bool`. True iff the children of this node are known.
+- `get_rule(::AbstractRuleNode)::Int`. Returns the index of the grammar rule it represents.
+- `get_children(::AbstractRuleNode)::Vector{AbstractRuleNode}`. Returns the children of this node.
+
 Expression trees consist of [`RuleNode`](@ref)s and [`Hole`](@ref)s.
 
 - A [`RuleNode`](@ref) represents a certain production rule in the [`Grammar`](@ref).
@@ -430,23 +437,30 @@ Checks if an [`AbstractRuleNode`](@ref) tree contains a [`VariableShapedHole`](@
 contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c) for c ∈ rn.children)
 contains_variable_shaped_hole(hole::VariableShapedHole) = true
 
+
+#Shared reference to an empty vector to reduce memory allocations.
+NOCHILDREN = Vector{AbstractRuleNode}()
+
+
 """
 	get_children(rn::AbstractRuleNode)
 
 Returns the children of the given [`AbstractRuleNode`](@ref)
 """
-get_children(rn::RuleNode)::Vector{AbstractRuleNode} = rn.children
-get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = []
+get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
+get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = NOCHILDREN
 get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
 
-"""
-	has_children(rn::AbstractRuleNode)
 
-Returns true if the [`AbstractRuleNode`](@ref) has 1 or more children.
 """
-has_children(rn::RuleNode)::Bool = (length(rn.children) > 0)
-has_children(::VariableShapedHole)::Bool = false
-has_children(hole::FixedShapedHole)::Bool = (length(hole.children) > 0)
+	isfixedshaped(rn::AbstractRuleNode)
+
+Returns true iff the children of the [`AbstractRuleNode`](@ref) are known.
+"""
+isfixedshaped(::RuleNode)::Bool = true
+isfixedshaped(::VariableShapedHole)::Bool = false
+isfixedshaped(::FixedShapedHole)::Bool = true
+
 
 """
 	isfilled(node::AbstractRuleNode)::Bool

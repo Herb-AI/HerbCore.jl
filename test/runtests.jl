@@ -149,17 +149,17 @@ using Test
             ])) == 4
         end
 
-        @testset "has_children" begin
+        @testset "isfixedshaped" begin
             domain=BitVector((1, 1))
 
-            @test has_children(RuleNode(1, [RuleNode(2)])) == true
-            @test has_children(FixedShapedHole(domain, [RuleNode(2)])) == true
+            @test isfixedshaped(RuleNode(1, [RuleNode(2)])) == true
+            @test isfixedshaped(FixedShapedHole(domain, [RuleNode(2)])) == true
 
-            @test has_children(RuleNode(1)) == false
-            @test has_children(RuleNode(1, [])) == false
-            @test has_children(FixedShapedHole(domain, [])) == false
+            @test isfixedshaped(RuleNode(1)) == true
+            @test isfixedshaped(RuleNode(1, [])) == true
+            @test isfixedshaped(FixedShapedHole(domain, [])) == true
 
-            @test has_children(VariableShapedHole(domain)) == false
+            @test isfixedshaped(VariableShapedHole(domain)) == false
         end
 
         @testset "isfilled" begin

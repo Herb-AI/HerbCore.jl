@@ -25,7 +25,7 @@ export
     contains_variable_shaped_hole,
     get_children,
     get_rule,
-    has_children,
+    isfixedshaped,
     isfilled,
 
     Constraint,
