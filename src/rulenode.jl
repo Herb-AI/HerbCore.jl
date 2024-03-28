@@ -484,3 +484,33 @@ function get_rule(hole::Hole)
 	return findfirst(hole.domain)
 end
 
+"""
+	have_same_shape(node1::AbstractRuleNode, node2::AbstractRuleNode)
+
+Returns true iff `node1` and `node2` have the same shape
+Example:
+RuleNode(3, [
+	RuleNode(1),
+	RuleNode(1)
+]) and
+RuleNode(9, [
+	RuleNode(2),
+	VariableShapedHole(domain)
+])
+have the same shape: 1 root with 2 children.
+"""
+function have_same_shape(node1, node2)
+	children1 = get_children(node1)
+	children2 = get_children(node2)
+	if length(children1) != length(children2)
+		return false
+	end
+	if length(children1) > 0
+		for (child1, child2) ∈ zip(children1, children2)
+			if !have_same_shape(child1, child2)
+				return false
+			end
+		end
+	end
+	return true
+end

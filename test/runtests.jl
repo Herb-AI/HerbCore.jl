@@ -184,5 +184,36 @@ using Test
             @test get_rule(FixedShapedHole(domain_of_size_1, [RuleNode(5), RuleNode(6)])) == 2
             @test get_rule(VariableShapedHole(domain_of_size_1)) == 2
         end
+
+        @testset "have_same_shape" begin
+            domain = BitVector((1, 1, 1, 1, 1, 1, 1, 1, 1))
+            @test have_same_shape(RuleNode(1), RuleNode(2))
+            @test have_same_shape(RuleNode(1), VariableShapedHole(domain))
+            @test have_same_shape(RuleNode(1), RuleNode(4, [RuleNode(1)])) == false
+            @test have_same_shape(RuleNode(4, [RuleNode(1)]), RuleNode(1)) == false
+
+            node1 = RuleNode(3, [
+                RuleNode(1),
+                RuleNode(1)
+            ])
+            node2 = RuleNode(9, [
+                RuleNode(2),
+                VariableShapedHole(domain)
+            ])
+            @test have_same_shape(node1, node2)
+
+            node1 = RuleNode(3, [
+                RuleNode(1),
+                RuleNode(1)
+            ])
+            node2 = RuleNode(9, [
+                RuleNode(2),
+                RuleNode(3, [
+                    RuleNode(1),
+                    RuleNode(1)
+                ])
+            ])
+            @test have_same_shape(node1, node2) == false
+        end
     end
 end

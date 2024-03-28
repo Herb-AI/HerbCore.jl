@@ -27,6 +27,7 @@ export
     get_rule,
     isfixedshaped,
     isfilled,
+    have_same_shape,
 
     Constraint,
     Grammar
