@@ -148,5 +148,72 @@ using Test
                 FixedShapedHole(domain, [VariableShapedHole(domain), RuleNode(1)])
             ])) == 4
         end
+
+        @testset "isfixedshaped" begin
+            domain=BitVector((1, 1))
+
+            @test isfixedshaped(RuleNode(1, [RuleNode(2)])) == true
+            @test isfixedshaped(FixedShapedHole(domain, [RuleNode(2)])) == true
+
+            @test isfixedshaped(RuleNode(1)) == true
+            @test isfixedshaped(RuleNode(1, [])) == true
+            @test isfixedshaped(FixedShapedHole(domain, [])) == true
+
+            @test isfixedshaped(VariableShapedHole(domain)) == false
+        end
+
+        @testset "isfilled" begin
+            domain1=BitVector((0, 1, 0, 0, 0))
+            domain2=BitVector((0, 1, 0, 1, 0))
+            @test isfilled(RuleNode(1, [])) == true
+            @test isfilled(RuleNode(1, [RuleNode(2)])) == true
+            @test isfilled(RuleNode(1, [VariableShapedHole(domain1)])) == true
+            @test isfilled(RuleNode(1, [VariableShapedHole(domain2)])) == true
+
+            @test isfilled(FixedShapedHole(domain1, [VariableShapedHole(domain2)])) == true
+            @test isfilled(FixedShapedHole(domain2, [VariableShapedHole(domain2)])) == false
+
+            @test isfilled(VariableShapedHole(domain1)) == true
+            @test isfilled(VariableShapedHole(domain2)) == false
+        end
+
+        @testset "get_rule" begin
+            domain_of_size_1=BitVector((0, 1, 0, 0, 0))
+            @test get_rule(RuleNode(99, [RuleNode(3), RuleNode(4)])) == 99
+            @test get_rule(RuleNode(2, [RuleNode(3), RuleNode(4)])) == 2
+            @test get_rule(FixedShapedHole(domain_of_size_1, [RuleNode(5), RuleNode(6)])) == 2
+            @test get_rule(VariableShapedHole(domain_of_size_1)) == 2
+        end
+
+        @testset "have_same_shape" begin
+            domain = BitVector((1, 1, 1, 1, 1, 1, 1, 1, 1))
+            @test have_same_shape(RuleNode(1), RuleNode(2))
+            @test have_same_shape(RuleNode(1), VariableShapedHole(domain))
+            @test have_same_shape(RuleNode(1), RuleNode(4, [RuleNode(1)])) == false
+            @test have_same_shape(RuleNode(4, [RuleNode(1)]), RuleNode(1)) == false
+
+            node1 = RuleNode(3, [
+                RuleNode(1),
+                RuleNode(1)
+            ])
+            node2 = RuleNode(9, [
+                RuleNode(2),
+                VariableShapedHole(domain)
+            ])
+            @test have_same_shape(node1, node2)
+
+            node1 = RuleNode(3, [
+                RuleNode(1),
+                RuleNode(1)
+            ])
+            node2 = RuleNode(9, [
+                RuleNode(2),
+                RuleNode(3, [
+                    RuleNode(1),
+                    RuleNode(1)
+                ])
+            ])
+            @test have_same_shape(node1, node2) == false
+        end
     end
 end

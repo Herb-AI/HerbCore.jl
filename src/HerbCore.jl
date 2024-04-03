@@ -24,6 +24,10 @@ export
     contains_hole,
     contains_variable_shaped_hole,
     get_children,
+    get_rule,
+    isfixedshaped,
+    isfilled,
+    have_same_shape,
 
     Constraint,
     AbstractGrammar

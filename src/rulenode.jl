@@ -1,7 +1,14 @@
 """
-    AbstractRuleNode
+    abstract type AbstractRuleNode end
 
 Abstract type for representing expression trees.
+An `AbstractRuleNode` is expected to implement the following functions:
+
+- `isfilled(::AbstractRuleNode)::Bool`. True iff the grammar rule this node holds is not ambiguous, i.e. has domain size 1.
+- `isfixedshaped(::AbstractRuleNode)::Bool`. True iff the children of this node are known.
+- `get_rule(::AbstractRuleNode)::Int`. Returns the index of the grammar rule it represents.
+- `get_children(::AbstractRuleNode)::Vector{AbstractRuleNode}`. Returns the children of this node.
+
 Expression trees consist of [`RuleNode`](@ref)s and [`Hole`](@ref)s.
 
 - A [`RuleNode`](@ref) represents a certain production rule in the [`AbstractGrammar`](@ref).
@@ -36,7 +43,7 @@ end
 
 A [`Hole`](@ref) is a placeholder where certain rules from the grammar can still be applied.
 The `domain` of a [`Hole`](@ref) defines which rules can be applied.
-The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. 
+The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
 abstract type Hole <: AbstractRuleNode end
 
@@ -99,7 +106,7 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
     Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
 RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
-    
+
 Base.:(==)(::RuleNode, ::Hole) = false
 Base.:(==)(::Hole, ::RuleNode) = false
 Base.:(==)(A::RuleNode, B::RuleNode) = 
@@ -184,8 +191,8 @@ Base.length(::VariableShapedHole) = 1
     Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool
 
 Compares two [`RuleNode`](@ref)s. Returns true if the left [`RuleNode`](@ref) is less than the right [`RuleNode`](@ref).
-Order is determined from the index of the [`RuleNode`](@ref)s. 
-If both [`RuleNode`](@ref)s have the same index, a depth-first search is 
+Order is determined from the index of the [`RuleNode`](@ref)s.
+If both [`RuleNode`](@ref)s have the same index, a depth-first search is
 performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
@@ -367,7 +374,7 @@ rulesonleft(h::Hole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 """
     get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
 
-Retrieves a [`RuleNode`](@ref) at the given location by reference. 
+Retrieves a [`RuleNode`](@ref) at the given location by reference.
 """
 function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
     if location == []
@@ -435,6 +442,80 @@ Checks if an [`AbstractRuleNode`](@ref) tree contains a [`VariableShapedHole`](@
 contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c) for c ∈ rn.children)
 contains_variable_shaped_hole(hole::VariableShapedHole) = true
 
-get_children(rn::RuleNode)::Vector{AbstractRuleNode} = rn.children
-get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = []
+
+#Shared reference to an empty vector to reduce memory allocations.
+NOCHILDREN = Vector{AbstractRuleNode}()
+
+
+"""
+	get_children(rn::AbstractRuleNode)
+
+Returns the children of the given [`AbstractRuleNode`](@ref)
+"""
+get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
+get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = NOCHILDREN
 get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
+
+
+"""
+	isfixedshaped(rn::AbstractRuleNode)
+
+Returns true iff the children of the [`AbstractRuleNode`](@ref) are known.
+"""
+isfixedshaped(::RuleNode)::Bool = true
+isfixedshaped(::VariableShapedHole)::Bool = false
+isfixedshaped(::FixedShapedHole)::Bool = true
+
+
+"""
+	isfilled(node::AbstractRuleNode)::Bool
+
+Returns whether the [`AbstractRuleNode`] holds a single rule. This is always the case for [`RuleNode`](@ref)s.
+Holes are considered to be "filled" iff their domain size is exactly 1.
+"""
+isfilled(rn::RuleNode)::Bool = true
+isfilled(hole::FixedShapedHole)::Bool = (sum(hole.domain) == 1)
+isfilled(hole::VariableShapedHole)::Bool = (sum(hole.domain) == 1)
+
+
+"""
+	get_rule(rn::AbstractRuleNode)
+
+Returns the index of the rule that this [`AbstractRuleNode`](@ref) represents
+"""
+get_rule(rn::RuleNode) = rn.ind
+function get_rule(hole::Hole)
+	@assert isfilled(hole) "$(hole) is not filled, unable to get the rule"
+	return findfirst(hole.domain)
+end
+
+"""
+	have_same_shape(node1::AbstractRuleNode, node2::AbstractRuleNode)
+
+Returns true iff `node1` and `node2` have the same shape
+Example:
+RuleNode(3, [
+	RuleNode(1),
+	RuleNode(1)
+]) and
+RuleNode(9, [
+	RuleNode(2),
+	VariableShapedHole(domain)
+])
+have the same shape: 1 root with 2 children.
+"""
+function have_same_shape(node1, node2)
+	children1 = get_children(node1)
+	children2 = get_children(node2)
+	if length(children1) != length(children2)
+		return false
+	end
+	if length(children1) > 0
+		for (child1, child2) ∈ zip(children1, children2)
+			if !have_same_shape(child1, child2)
+				return false
+			end
+		end
+	end
+	return true
+end
