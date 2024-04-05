@@ -1,0 +1,37 @@
+name: Check Docs
+
+on:
+  push:
+    branches:
+      - add_linting # update to match your development branch (master, main, dev, trunk, ...)
+    tags: '*'
+  pull_request:
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Julia
+      uses: julia-actions/setup-julia@v1
+      with:
+        version: '1' # Use the latest stable Julia version
+    - name: Install dependencies
+      run: |
+        julia --project=docs -e '
+          using Pkg;
+          Pkg.develop(PackageSpec(path=pwd()));
+          Pkg.instantiate();
+          Pkg.add("Documenter");
+        '
+    - name: Try building documentation and run doctests
+      run: |
+        julia --project=docs -e '
+          using Documenter, HerbCore;
+          makedocs(
+            modules=[HerbCore]
+            format=Documenter.HTML(),
+            doctest=true,
+            warnonly=:doctest
+          );
+        '
