@@ -27,6 +27,7 @@ export
     get_rule,
     isfixedshaped,
     isfilled,
+    hasdynamicvalue,
     have_same_shape,
 
     AbstractConstraint,
