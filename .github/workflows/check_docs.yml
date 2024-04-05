@@ -29,10 +29,12 @@ jobs:
         julia --project=docs -e '
           using Documenter, HerbCore;
           makedocs(
+            source=".github/workflow/src",
             sitename="HerbCore.jl",
             modules=[HerbCore],
             format=Documenter.HTML(),
             doctest=true,
-            warnonly=[:doctest, :missing_docs]
+            warnonly=[:doctest, :missing_docs],
+            pages=["index.md"]
           );
         '
