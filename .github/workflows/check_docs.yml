@@ -40,11 +40,11 @@ jobs:
             Modules = [HerbCore]
             ```
           """
-          open("index.md", "w") do file
+          mkpath("src/")
+          open("src/index.md", "w") do file
             write(file, content)
           end
           makedocs(
-            source="",
             sitename="HerbCore.jl",
             modules=[HerbCore],
             format=Documenter.HTML(),
