@@ -29,7 +29,7 @@ export
     isfilled,
     have_same_shape,
 
-    Constraint,
+    AbstractConstraint,
     AbstractGrammar
 
 end # module HerbCore
