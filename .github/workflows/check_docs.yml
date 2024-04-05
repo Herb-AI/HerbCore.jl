@@ -28,8 +28,23 @@ jobs:
       run: |
         julia --project=docs -e '
           using Documenter, HerbCore;
+          content = """
+            ```@meta
+            CurrentModule = HerbCore
+            DocTestSetup = quote
+                using HerbCore
+            end
+            ```
+
+            ```@autodocs
+            Modules = [HerbCore]
+            ```
+          """
+          open("index.md", "w") do file
+            write(file, content)
+          end
           makedocs(
-            source="../.github/workflow/src",
+            source="",
             sitename="HerbCore.jl",
             modules=[HerbCore],
             format=Documenter.HTML(),
