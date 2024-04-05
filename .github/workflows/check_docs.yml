@@ -29,6 +29,7 @@ jobs:
         julia --project=docs -e '
           using Documenter, HerbCore;
           makedocs(
+            sitename="HerbCore.jl"
             modules=[HerbCore],
             format=Documenter.HTML(),
             doctest=true,
