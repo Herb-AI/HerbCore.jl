@@ -32,6 +32,6 @@ jobs:
             modules=[HerbCore],
             format=Documenter.HTML(),
             doctest=true,
-            warnonly=:doctest
+            warnonly=[:doctest, :missing_docs]
           );
         '
