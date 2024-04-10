@@ -16,6 +16,6 @@ If a rule is terminal, the corresponding list is empty.
 - `log_probabilities::Union{Vector{Real}, Nothing}`: A list of probabilities for each rule. 
 If the grammar is non-probabilistic, the list can be `nothing`.
 
-For concrete types, see [`ContextSensitiveGrammar`](@ref) within the `HerbGrammar` module.
+For concrete types, see `ContextSensitiveGrammar` within the `HerbGrammar` module.
 """
 abstract type AbstractGrammar end
