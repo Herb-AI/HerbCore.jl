@@ -194,7 +194,7 @@ Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
     # Helper function for Base.isless
     if !isfilled(rn₁) || !isfilled(rn₂)
-        throw("BadArgument: unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))")
+        throw(ArgumentError("Unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))"))
     end
     if get_rule(rn₁) == get_rule(rn₂)
         for (c₁, c₂) ∈ zip(rn₁.children, rn₂.children)
