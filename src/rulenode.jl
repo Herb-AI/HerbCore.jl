@@ -16,7 +16,6 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
-
 """
     RuleNode <: AbstractRuleNode
 
@@ -36,7 +35,6 @@ mutable struct RuleNode <: AbstractRuleNode
     _val::Any  #value of _() evals
     children::Vector{AbstractRuleNode}
 end
-
 
 """
     AbstractHole <: AbstractRuleNode
@@ -58,7 +56,6 @@ mutable struct UniformHole <: AbstractHole
     children::Vector{AbstractRuleNode}
 end
 
-
 """
 Hole <: AbstractHole
 
@@ -67,7 +64,6 @@ Hole <: AbstractHole
 mutable struct Hole <: AbstractHole
     domain::BitVector
 end
-
 
 """
     HoleReference
@@ -78,7 +74,6 @@ struct HoleReference
     hole::AbstractHole
     path::Vector{Int}
 end
-
 
 RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
 """
@@ -106,10 +101,11 @@ RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
 
 Base.:(==)(::RuleNode, ::AbstractHole) = false
 Base.:(==)(::AbstractHole, ::RuleNode) = false
-Base.:(==)(A::RuleNode, B::RuleNode) = 
-    (A.ind == B.ind) && 
-    length(A.children) == length(B.children) && #required because zip doesn't check lengths
-    all(isequal(a, b) for (a, b) ∈ zip(A.children, B.children))
+function Base.:(==)(A::RuleNode, B::RuleNode)
+    (A.ind == B.ind) &&
+        length(A.children) == length(B.children) && #required because zip doesn't check lengths
+        all(isequal(a, b) for (a, b) in zip(A.children, B.children))
+end
 # We do not know how the holes will be expanded yet, so we cannot assume equality even if the domains are equal.
 Base.:(==)(A::AbstractHole, B::AbstractHole) = false
 
@@ -117,7 +113,7 @@ Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
 Base.copy(h::Hole) = Hole(copy(h.domain))
 Base.copy(h::UniformHole) = UniformHole(copy(h.domain), h.children)
 
-function Base.hash(node::RuleNode, h::UInt=zero(UInt))
+function Base.hash(node::RuleNode, h::UInt = zero(UInt))
     retval = hash(node.ind, h)
     for child in node.children
         retval = hash(child, retval)
@@ -125,16 +121,16 @@ function Base.hash(node::RuleNode, h::UInt=zero(UInt))
     return retval
 end
 
-function Base.hash(node::AbstractHole, h::UInt=zero(UInt))
+function Base.hash(node::AbstractHole, h::UInt = zero(UInt))
     return hash(node.domain, h)
 end
 
-function Base.show(io::IO, node::RuleNode; separator=",", last_child::Bool=false)
+function Base.show(io::IO, node::RuleNode; separator = ",", last_child::Bool = false)
     print(io, node.ind)
     if !isempty(node.children)
         print(io, "{")
-        for (i,c) in enumerate(node.children)
-            show(io, c, separator=separator, last_child=(i == length(node.children)))
+        for (i, c) in enumerate(node.children)
+            show(io, c, separator = separator, last_child = (i == length(node.children)))
         end
         print(io, "}")
     elseif !last_child
@@ -142,19 +138,19 @@ function Base.show(io::IO, node::RuleNode; separator=",", last_child::Bool=false
     end
 end
 
-function Base.show(io::IO, node::AbstractHole; separator=",", last_child::Bool=false)
+function Base.show(io::IO, node::AbstractHole; separator = ",", last_child::Bool = false)
     print(io, "hole[$(node.domain)]")
     if !last_child
         print(io, separator)
     end
 end
 
-function Base.show(io::IO, node::UniformHole; separator=",", last_child::Bool=false)
+function Base.show(io::IO, node::UniformHole; separator = ",", last_child::Bool = false)
     print(io, "fshole[$(node.domain)]")
     if !isempty(node.children)
         print(io, "{")
-        for (i,c) in enumerate(node.children)
-        show(io, c, separator=separator, last_child=(i == length(node.children)))
+        for (i, c) in enumerate(node.children)
+            show(io, c, separator = separator, last_child = (i == length(node.children)))
         end
         print(io, "}")
     elseif !last_child
@@ -185,8 +181,8 @@ If both [`RuleNode`](@ref)s have the same index, a depth-first search is
 performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
-Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(rn₁, rn₂) == -1
-
+Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+    rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
     # Helper function for Base.isless
@@ -194,7 +190,7 @@ function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::In
         throw(ArgumentError("Unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))"))
     end
     if get_rule(rn₁) == get_rule(rn₂)
-        for (c₁, c₂) ∈ zip(rn₁.children, rn₂.children)
+        for (c₁, c₂) in zip(rn₁.children, rn₂.children)
             comparison = _rulenode_compare(c₁, c₂)
             if comparison ≠ 0
                 return comparison
@@ -206,7 +202,6 @@ function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::In
     end
 end
 
-
 """
     depth(root::RuleNode)::Int
 
@@ -216,13 +211,12 @@ Holes do count towards the depth.
 function depth(root::AbstractRuleNode)::Int
     retval = 1
     for c in root.children
-        retval = max(retval, depth(c)+1)
+        retval = max(retval, depth(c) + 1)
     end
     return retval
 end
 
 depth(::Hole) = 1
-
 
 """
     node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
@@ -238,7 +232,7 @@ function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
     root isa Hole && return 1
     for c in root.children
         d = node_depth(c, node)
-        d > 0 && (return d+1)
+        d > 0 && (return d + 1)
     end
     return 0
 end
@@ -258,7 +252,7 @@ function rulesoftype(node::RuleNode, ruleset::Set{Int})
     if isempty(node.children)
         return retval
     else
-        for child ∈ node.children
+        for child in node.children
             union!(retval, rulesoftype(child, ruleset))
         end
 
@@ -286,15 +280,14 @@ end
 Replace child `i` of a node, a part of larger `expr`, with `new_expr`.
 """
 function swap_node(expr::RuleNode, node::RuleNode, child_index::Int, new_expr::RuleNode)
-    if expr == node 
+    if expr == node
         node.children[child_index] = new_expr
     else
-        for child ∈ expr.children
+        for child in expr.children
             swap_node(child, node, child_index, new_expr)
         end
     end
 end
-
 
 """
     get_rulesequence(node::RuleNode, path::Vector{Int})
@@ -312,11 +305,13 @@ function get_rulesequence(node::RuleNode, path::Vector{Int})
     elseif isassigned(path, 2)
         # at least two items are left in the path
         # need to access the child with get because it can happen that the child is not yet built
-        return append!([node.ind], get_rulesequence(get(node.children, path[begin], RuleNode(0)), path[2:end]))
+        return append!([node.ind],
+            get_rulesequence(get(node.children, path[begin], RuleNode(0)), path[2:end]))
     else
         # if only one item left in the path
         # need to access the child with get because it can happen that the child is not yet built
-        return append!([node.ind], get_rulesequence(get(node.children, path[begin], RuleNode(0)), Vector{Int}()))
+        return append!([node.ind],
+            get_rulesequence(get(node.children, path[begin], RuleNode(0)), Vector{Int}()))
     end
 end
 
@@ -337,27 +332,26 @@ function rulesonleft(expr::RuleNode, path::Vector{Int})
         for ch in expr.children
             union!(ruleset, rulesonleft(ch, Vector{Int}()))
         end
-        return ruleset 
+        return ruleset
     elseif length(path) == 1
         # if there is only one element left in the path, collect all children except the one indicated in the path
         ruleset = Set{Int}(expr.ind)
-        for i in 1:path[begin]-1
+        for i in 1:(path[begin] - 1)
             union!(ruleset, rulesonleft(expr.children[i], Vector{Int}()))
         end
-        return ruleset 
+        return ruleset
     else
         # collect all subtrees up to the child indexed in the path
         ruleset = Set{Int}(expr.ind)
-        for i in 1:path[begin]-1
+        for i in 1:(path[begin] - 1)
             union!(ruleset, rulesonleft(expr.children[i], Vector{Int}()))
         end
         union!(ruleset, rulesonleft(expr.children[path[begin]], path[2:end]))
-        return ruleset 
+        return ruleset
     end
 end
 
 rulesonleft(h::AbstractHole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
-
 
 """
     get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
@@ -384,17 +378,17 @@ function get_node_at_location(root::Hole, location::Vector{Int})
     error("Node at the specified location not found.")
 end
 
-
 """
     get_node_path(root::AbstractRuleNode, node::AbstractRuleNode)
 
 Returns the path from the `root` to the `targetnode`. Returns nothing if no path exists.
 """
-function get_node_path(root::AbstractRuleNode, targetnode::AbstractRuleNode)::Union{Vector{Int}, Nothing}
+function get_node_path(
+        root::AbstractRuleNode, targetnode::AbstractRuleNode)::Union{Vector{Int}, Nothing}
     if root === targetnode
         return Vector{Int}()
     end
-    for (i, child) ∈ enumerate(get_children(root))
+    for (i, child) in enumerate(get_children(root))
         path = get_node_path(child, targetnode)
         if !isnothing(path)
             return prepend!(path, i)
@@ -403,23 +397,24 @@ function get_node_path(root::AbstractRuleNode, targetnode::AbstractRuleNode)::Un
     return nothing
 end
 
-
 """
     number_of_holes(rn::AbstractRuleNode)::Int
 
 Recursively counts the number of holes in an [`AbstractRuleNode`](@ref)
 """
-number_of_holes(rn::RuleNode) = reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
-number_of_holes(rn::UniformHole) = 1 + reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
+number_of_holes(rn::RuleNode) = reduce(
+    +, [number_of_holes(c) for c in rn.children], init = 0)
+function number_of_holes(rn::UniformHole)
+    1 + reduce(+, [number_of_holes(c) for c in rn.children], init = 0)
+end
 number_of_holes(rn::Hole) = 1
-
 
 """
     contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 
 Checks if an [`AbstractRuleNode`](@ref) tree contains a [`AbstractHole`](@ref).
 """
-contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
+contains_hole(rn::RuleNode) = any(contains_hole(c) for c in rn.children)
 contains_hole(hole::AbstractHole) = true
 
 """
@@ -427,13 +422,12 @@ contains_hole(hole::AbstractHole) = true
 
 Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
-contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c) for c ∈ rn.children)
+contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c)
+for c in rn.children)
 contains_variable_shaped_hole(hole::Hole) = true
-
 
 #Shared reference to an empty vector to reduce memory allocations.
 NOCHILDREN = Vector{AbstractRuleNode}()
-
 
 """
 	get_children(rn::AbstractRuleNode)
@@ -444,7 +438,6 @@ get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
 get_children(::Hole)::Vector{AbstractRuleNode} = NOCHILDREN
 get_children(h::UniformHole)::Vector{AbstractRuleNode} = h.children
 
-
 """
 	isfixedshaped(rn::AbstractRuleNode)
 
@@ -453,7 +446,6 @@ Returns true iff the children of the [`AbstractRuleNode`](@ref) are known.
 isfixedshaped(::RuleNode)::Bool = true
 isfixedshaped(::Hole)::Bool = false
 isfixedshaped(::UniformHole)::Bool = true
-
 
 """
 	isfilled(node::AbstractRuleNode)::Bool
@@ -465,7 +457,6 @@ isfilled(rn::RuleNode)::Bool = true
 isfilled(hole::UniformHole)::Bool = (sum(hole.domain) == 1)
 isfilled(hole::Hole)::Bool = (sum(hole.domain) == 1)
 
-
 """
     function hasdynamicvalue(rn::AbstractRuleNode)::Bool
 
@@ -474,7 +465,6 @@ Returns true iff the rule has a `_val` field set up.
 hasdynamicvalue(rn::RuleNode)::Bool = !isnothing(rn._val)
 hasdynamicvalue(rn::AbstractRuleNode)::Bool = false
 
-
 """
 	get_rule(rn::AbstractRuleNode)
 
@@ -482,8 +472,8 @@ Returns the index of the rule that this [`AbstractRuleNode`](@ref) represents
 """
 get_rule(rn::RuleNode) = rn.ind
 function get_rule(hole::AbstractHole)
-	@assert isfilled(hole) "$(hole) is not filled, unable to get the rule"
-	return findfirst(hole.domain)
+    @assert isfilled(hole) "$(hole) is not filled, unable to get the rule"
+    return findfirst(hole.domain)
 end
 
 """
@@ -502,17 +492,17 @@ RuleNode(9, [
 have the same shape: 1 root with 2 children.
 """
 function have_same_shape(node1, node2)
-	children1 = get_children(node1)
-	children2 = get_children(node2)
-	if length(children1) != length(children2)
-		return false
-	end
-	if length(children1) > 0
-		for (child1, child2) ∈ zip(children1, children2)
-			if !have_same_shape(child1, child2)
-				return false
-			end
-		end
-	end
-	return true
+    children1 = get_children(node1)
+    children2 = get_children(node2)
+    if length(children1) != length(children2)
+        return false
+    end
+    if length(children1) > 0
+        for (child1, child2) in zip(children1, children2)
+            if !have_same_shape(child1, child2)
+                return false
+            end
+        end
+    end
+    return true
 end
