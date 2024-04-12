@@ -7,9 +7,9 @@ include("grammar.jl")
 export 
     AbstractRuleNode,
     RuleNode,
+    AbstractHole,
+    UniformHole,
     Hole,
-    FixedShapedHole,
-    VariableShapedHole,
     HoleReference,
 
     depth,

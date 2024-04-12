@@ -9,10 +9,10 @@ An `AbstractRuleNode` is expected to implement the following functions:
 - `get_rule(::AbstractRuleNode)::Int`. Returns the index of the grammar rule it represents.
 - `get_children(::AbstractRuleNode)::Vector{AbstractRuleNode}`. Returns the children of this node.
 
-Expression trees consist of [`RuleNode`](@ref)s and [`Hole`](@ref)s.
+Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 
 - A [`RuleNode`](@ref) represents a certain production rule in the [`AbstractGrammar`](@ref).
-- A [`Hole`](@ref) is a placeholder where certain rules in the grammar still can be applied. 
+- A [`AbstractHole`](@ref) is a placeholder where certain rules in the grammar still can be applied. 
 """
 abstract type AbstractRuleNode end
 
@@ -39,37 +39,34 @@ end
 
 
 """
-    Hole <: AbstractRuleNode
+    AbstractHole <: AbstractRuleNode
 
-A [`Hole`](@ref) is a placeholder where certain rules from the grammar can still be applied.
-The `domain` of a [`Hole`](@ref) defines which rules can be applied.
+A [`AbstractHole`](@ref) is a placeholder where certain rules from the grammar can still be applied.
+The `domain` of a [`AbstractHole`](@ref) defines which rules can be applied.
 The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
-abstract type Hole <: AbstractRuleNode end
+abstract type AbstractHole <: AbstractRuleNode end
 
 """
-    FixedShapedHole <: Hole
+    UniformHole <: AbstractHole
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. All rules in the domain are required to have the same childtypes.
 - `children`: The children of this hole in the expression tree.
 """
-mutable struct FixedShapedHole <: Hole
+mutable struct UniformHole <: AbstractHole
     domain::BitVector
     children::Vector{AbstractRuleNode}
 end
 
 
 """
-VariableShapedHole <: Hole
+Hole <: AbstractHole
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
-mutable struct VariableShapedHole <: Hole
+mutable struct Hole <: AbstractHole
     domain::BitVector
 end
-
-
-Hole(domain::BitVector) = VariableShapedHole(domain)
 
 
 """
@@ -78,7 +75,7 @@ Hole(domain::BitVector) = VariableShapedHole(domain)
 Contains a hole and the path to the hole from the root of the tree.
 """
 struct HoleReference
-    hole::Hole
+    hole::AbstractHole
     path::Vector{Int}
 end
 
@@ -100,25 +97,25 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 !!! warning
 	Only use this constructor if you are absolutely certain that a rule is terminal and cannot have children.
 	Use [`RuleNode(ind::Int, grammar::AbstractGrammar)`] for rules that might have children.
-	In general, [`Hole`](@ref)s should be used as a placeholder when the children of a node are not yet known.   
+	In general, [`AbstractHole`](@ref)s should be used as a placeholder when the children of a node are not yet known.   
 
 !!! compat
     Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
 RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
 
-Base.:(==)(::RuleNode, ::Hole) = false
-Base.:(==)(::Hole, ::RuleNode) = false
+Base.:(==)(::RuleNode, ::AbstractHole) = false
+Base.:(==)(::AbstractHole, ::RuleNode) = false
 Base.:(==)(A::RuleNode, B::RuleNode) = 
     (A.ind == B.ind) && 
     length(A.children) == length(B.children) && #required because zip doesn't check lengths
     all(isequal(a, b) for (a, b) ∈ zip(A.children, B.children))
 # We do not know how the holes will be expanded yet, so we cannot assume equality even if the domains are equal.
-Base.:(==)(A::Hole, B::Hole) = false
+Base.:(==)(A::AbstractHole, B::AbstractHole) = false
 
 Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
-Base.copy(h::VariableShapedHole) = VariableShapedHole(copy(h.domain))
-Base.copy(h::FixedShapedHole) = FixedShapedHole(copy(h.domain), h.children)
+Base.copy(h::Hole) = Hole(copy(h.domain))
+Base.copy(h::UniformHole) = UniformHole(copy(h.domain), h.children)
 
 function Base.hash(node::RuleNode, h::UInt=zero(UInt))
     retval = hash(node.ind, h)
@@ -128,7 +125,7 @@ function Base.hash(node::RuleNode, h::UInt=zero(UInt))
     return retval
 end
 
-function Base.hash(node::Hole, h::UInt=zero(UInt))
+function Base.hash(node::AbstractHole, h::UInt=zero(UInt))
     return hash(node.domain, h)
 end
 
@@ -145,14 +142,14 @@ function Base.show(io::IO, node::RuleNode; separator=",", last_child::Bool=false
     end
 end
 
-function Base.show(io::IO, node::Hole; separator=",", last_child::Bool=false)
+function Base.show(io::IO, node::AbstractHole; separator=",", last_child::Bool=false)
     print(io, "hole[$(node.domain)]")
     if !last_child
         print(io, separator)
     end
 end
 
-function Base.show(io::IO, node::FixedShapedHole; separator=",", last_child::Bool=false)
+function Base.show(io::IO, node::UniformHole; separator=",", last_child::Bool=false)
     print(io, "fshole[$(node.domain)]")
     if !isempty(node.children)
         print(io, "{")
@@ -177,7 +174,7 @@ function Base.length(root::AbstractRuleNode)
     end
     return retval
 end
-Base.length(::VariableShapedHole) = 1
+Base.length(::Hole) = 1
 
 """
     Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool
@@ -224,7 +221,7 @@ function depth(root::AbstractRuleNode)::Int
     return retval
 end
 
-depth(::VariableShapedHole) = 1
+depth(::Hole) = 1
 
 
 """
@@ -238,7 +235,7 @@ Depth is `1` when `root == node`.
 """
 function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
     root ≡ node && return 1
-    root isa VariableShapedHole && return 1
+    root isa Hole && return 1
     for c in root.children
         d = node_depth(c, node)
         d > 0 && (return d+1)
@@ -323,7 +320,7 @@ function get_rulesequence(node::RuleNode, path::Vector{Int})
     end
 end
 
-get_rulesequence(::Hole, ::Vector{Int}) = Vector{Int}()
+get_rulesequence(::AbstractHole, ::Vector{Int}) = Vector{Int}()
 
 """
     rulesonleft(expr::RuleNode, path::Vector{Int})::Set{Int}
@@ -359,7 +356,7 @@ function rulesonleft(expr::RuleNode, path::Vector{Int})
     end
 end
 
-rulesonleft(h::Hole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
+rulesonleft(h::AbstractHole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 
 """
@@ -376,11 +373,11 @@ function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
 end
 
 """
-    get_node_at_location(root::VariableShapedHole, location::Vector{Int})
+    get_node_at_location(root::Hole, location::Vector{Int})
 
 Retrieves the current hole, if location is this very hole. Throws error otherwise.
 """
-function get_node_at_location(root::VariableShapedHole, location::Vector{Int})
+function get_node_at_location(root::Hole, location::Vector{Int})
     if location == []
         return root
     end
@@ -413,25 +410,25 @@ end
 Recursively counts the number of holes in an [`AbstractRuleNode`](@ref)
 """
 number_of_holes(rn::RuleNode) = reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
-number_of_holes(rn::FixedShapedHole) = 1 + reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
-number_of_holes(rn::VariableShapedHole) = 1
+number_of_holes(rn::UniformHole) = 1 + reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
+number_of_holes(rn::Hole) = 1
 
 
 """
     contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
 
-Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
+Checks if an [`AbstractRuleNode`](@ref) tree contains a [`AbstractHole`](@ref).
 """
 contains_hole(rn::RuleNode) = any(contains_hole(c) for c ∈ rn.children)
-contains_hole(hole::Hole) = true
+contains_hole(hole::AbstractHole) = true
 
 """
     contains_variable_shaped_hole(rn::RuleNode)
 
-Checks if an [`AbstractRuleNode`](@ref) tree contains a [`VariableShapedHole`](@ref).
+Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
 contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c) for c ∈ rn.children)
-contains_variable_shaped_hole(hole::VariableShapedHole) = true
+contains_variable_shaped_hole(hole::Hole) = true
 
 
 #Shared reference to an empty vector to reduce memory allocations.
@@ -444,8 +441,8 @@ NOCHILDREN = Vector{AbstractRuleNode}()
 Returns the children of the given [`AbstractRuleNode`](@ref)
 """
 get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
-get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = NOCHILDREN
-get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
+get_children(::Hole)::Vector{AbstractRuleNode} = NOCHILDREN
+get_children(h::UniformHole)::Vector{AbstractRuleNode} = h.children
 
 
 """
@@ -454,8 +451,8 @@ get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
 Returns true iff the children of the [`AbstractRuleNode`](@ref) are known.
 """
 isfixedshaped(::RuleNode)::Bool = true
-isfixedshaped(::VariableShapedHole)::Bool = false
-isfixedshaped(::FixedShapedHole)::Bool = true
+isfixedshaped(::Hole)::Bool = false
+isfixedshaped(::UniformHole)::Bool = true
 
 
 """
@@ -465,8 +462,8 @@ Returns whether the [`AbstractRuleNode`] holds a single rule. This is always the
 Holes are considered to be "filled" iff their domain size is exactly 1.
 """
 isfilled(rn::RuleNode)::Bool = true
-isfilled(hole::FixedShapedHole)::Bool = (sum(hole.domain) == 1)
-isfilled(hole::VariableShapedHole)::Bool = (sum(hole.domain) == 1)
+isfilled(hole::UniformHole)::Bool = (sum(hole.domain) == 1)
+isfilled(hole::Hole)::Bool = (sum(hole.domain) == 1)
 
 
 """
@@ -484,7 +481,7 @@ hasdynamicvalue(rn::AbstractRuleNode)::Bool = false
 Returns the index of the rule that this [`AbstractRuleNode`](@ref) represents
 """
 get_rule(rn::RuleNode) = rn.ind
-function get_rule(hole::Hole)
+function get_rule(hole::AbstractHole)
 	@assert isfilled(hole) "$(hole) is not filled, unable to get the rule"
 	return findfirst(hole.domain)
 end
@@ -500,7 +497,7 @@ RuleNode(3, [
 ]) and
 RuleNode(9, [
 	RuleNode(2),
-	VariableShapedHole(domain)
+	Hole(domain)
 ])
 have the same shape: 1 root with 2 children.
 """
