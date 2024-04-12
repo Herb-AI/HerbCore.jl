@@ -48,12 +48,12 @@ The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rul
 abstract type Hole <: AbstractRuleNode end
 
 """
-    FixedShapedHole <: Hole
+    UniformHole <: Hole
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. All rules in the domain are required to have the same childtypes.
 - `children`: The children of this hole in the expression tree.
 """
-mutable struct FixedShapedHole <: Hole
+mutable struct UniformHole <: Hole
     domain::BitVector
     children::Vector{AbstractRuleNode}
 end
@@ -118,7 +118,7 @@ Base.:(==)(A::Hole, B::Hole) = false
 
 Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
 Base.copy(h::VariableShapedHole) = VariableShapedHole(copy(h.domain))
-Base.copy(h::FixedShapedHole) = FixedShapedHole(copy(h.domain), h.children)
+Base.copy(h::UniformHole) = UniformHole(copy(h.domain), h.children)
 
 function Base.hash(node::RuleNode, h::UInt=zero(UInt))
     retval = hash(node.ind, h)
@@ -152,7 +152,7 @@ function Base.show(io::IO, node::Hole; separator=",", last_child::Bool=false)
     end
 end
 
-function Base.show(io::IO, node::FixedShapedHole; separator=",", last_child::Bool=false)
+function Base.show(io::IO, node::UniformHole; separator=",", last_child::Bool=false)
     print(io, "fshole[$(node.domain)]")
     if !isempty(node.children)
         print(io, "{")
@@ -413,7 +413,7 @@ end
 Recursively counts the number of holes in an [`AbstractRuleNode`](@ref)
 """
 number_of_holes(rn::RuleNode) = reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
-number_of_holes(rn::FixedShapedHole) = 1 + reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
+number_of_holes(rn::UniformHole) = 1 + reduce(+, [number_of_holes(c) for c ∈ rn.children], init=0)
 number_of_holes(rn::VariableShapedHole) = 1
 
 
@@ -445,7 +445,7 @@ Returns the children of the given [`AbstractRuleNode`](@ref)
 """
 get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
 get_children(::VariableShapedHole)::Vector{AbstractRuleNode} = NOCHILDREN
-get_children(h::FixedShapedHole)::Vector{AbstractRuleNode} = h.children
+get_children(h::UniformHole)::Vector{AbstractRuleNode} = h.children
 
 
 """
@@ -455,7 +455,7 @@ Returns true iff the children of the [`AbstractRuleNode`](@ref) are known.
 """
 isfixedshaped(::RuleNode)::Bool = true
 isfixedshaped(::VariableShapedHole)::Bool = false
-isfixedshaped(::FixedShapedHole)::Bool = true
+isfixedshaped(::UniformHole)::Bool = true
 
 
 """
@@ -465,7 +465,7 @@ Returns whether the [`AbstractRuleNode`] holds a single rule. This is always the
 Holes are considered to be "filled" iff their domain size is exactly 1.
 """
 isfilled(rn::RuleNode)::Bool = true
-isfilled(hole::FixedShapedHole)::Bool = (sum(hole.domain) == 1)
+isfilled(hole::UniformHole)::Bool = (sum(hole.domain) == 1)
 isfilled(hole::VariableShapedHole)::Bool = (sum(hole.domain) == 1)
 
 
