@@ -169,22 +169,14 @@ end
     Base.length(root::RuleNode)
 
 Return the number of nodes in the tree rooted at root.
-Holes don't count.
 """
-function Base.length(root::Union{RuleNode, FixedShapedHole})
+function Base.length(root::AbstractRuleNode)
     retval = 1
-    for c in root.children
+    for c in get_children(root)
         retval += length(c)
     end
     return retval
 end
-
-"""
-    Base.length(root::VariableShapedHole)
-
-Return the number of nodes in the tree rooted at root.
-Holes do count.
-"""
 Base.length(::VariableShapedHole) = 1
 
 """
@@ -199,9 +191,12 @@ are found.
 Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(rn₁, rn₂) == -1
 
 
-function _rulenode_compare(rn₁::RuleNode, rn₂::RuleNode)::Int
+function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
     # Helper function for Base.isless
-    if rn₁.ind == rn₂.ind
+    if !isfilled(rn₁) || !isfilled(rn₂)
+        throw(ArgumentError("Unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))"))
+    end
+    if get_rule(rn₁) == get_rule(rn₂)
         for (c₁, c₂) ∈ zip(rn₁.children, rn₂.children)
             comparison = _rulenode_compare(c₁, c₂)
             if comparison ≠ 0
@@ -210,13 +205,9 @@ function _rulenode_compare(rn₁::RuleNode, rn₂::RuleNode)::Int
         end
         return 0
     else
-        return rn₁.ind < rn₂.ind ? -1 : 1
+        return get_rule(rn₁) < get_rule(rn₂) ? -1 : 1
     end
 end
-
-_rulenode_compare(::Hole, ::RuleNode) = -1
-_rulenode_compare(::RuleNode, ::Hole) = 1
-_rulenode_compare(::Hole, ::Hole) = 0
 
 
 """
@@ -476,6 +467,15 @@ Holes are considered to be "filled" iff their domain size is exactly 1.
 isfilled(rn::RuleNode)::Bool = true
 isfilled(hole::FixedShapedHole)::Bool = (sum(hole.domain) == 1)
 isfilled(hole::VariableShapedHole)::Bool = (sum(hole.domain) == 1)
+
+
+"""
+    function hasdynamicvalue(rn::AbstractRuleNode)::Bool
+
+Returns true iff the rule has a `_val` field set up.
+"""
+hasdynamicvalue(rn::RuleNode)::Bool = !isnothing(rn._val)
+hasdynamicvalue(rn::AbstractRuleNode)::Bool = false
 
 
 """

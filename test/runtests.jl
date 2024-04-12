@@ -40,6 +40,8 @@ using Test
             @test RuleNode(2) > RuleNode(1) 
             @test RuleNode(1,[RuleNode(2)]) < RuleNode(1,[RuleNode(3)]) 
             @test RuleNode(1,[RuleNode(2)]) < RuleNode(2,[RuleNode(1)]) 
+            @test_throws ArgumentError RuleNode(1) < VariableShapedHole(BitVector((1, 1)))
+            @test_throws ArgumentError VariableShapedHole(BitVector((1, 1))) < RuleNode(1)
         end
 
         @testset "Node depth from a tree" begin 
@@ -214,6 +216,14 @@ using Test
                 ])
             ])
             @test have_same_shape(node1, node2) == false
+        end
+
+        @testset "hasdynamicvalue" begin
+            @test hasdynamicvalue(RuleNode(1, "DynamicValue")) == true
+            @test hasdynamicvalue(RuleNode(1)) == false
+            @test hasdynamicvalue(FixedShapedHole(BitVector((1, 0)), [RuleNode(1, "DynamicValue")])) == false
+            @test hasdynamicvalue(FixedShapedHole(BitVector((1, 0)), [RuleNode(1)])) == false
+            @test hasdynamicvalue(VariableShapedHole(BitVector((1, 0)))) == false
         end
     end
 end

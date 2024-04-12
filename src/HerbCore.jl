@@ -27,9 +27,10 @@ export
     get_rule,
     isfixedshaped,
     isfilled,
+    hasdynamicvalue,
     have_same_shape,
 
-    Constraint,
+    AbstractConstraint,
     AbstractGrammar
 
 end # module HerbCore
