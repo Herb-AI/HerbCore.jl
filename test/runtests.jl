@@ -40,8 +40,8 @@ using Test
             @test RuleNode(2) > RuleNode(1) 
             @test RuleNode(1,[RuleNode(2)]) < RuleNode(1,[RuleNode(3)]) 
             @test RuleNode(1,[RuleNode(2)]) < RuleNode(2,[RuleNode(1)]) 
-            @test_throws ArgumentError RuleNode(1) < VariableShapedHole(BitVector((1, 1)))
-            @test_throws ArgumentError VariableShapedHole(BitVector((1, 1))) < RuleNode(1)
+            @test_throws ArgumentError RuleNode(1) < Hole(BitVector((1, 1)))
+            @test_throws ArgumentError Hole(BitVector((1, 1))) < RuleNode(1)
         end
 
         @testset "Node depth from a tree" begin 
@@ -141,13 +141,13 @@ using Test
         @testset "number_of_holes" begin
             domain=BitVector((1, 1))
             @test number_of_holes(RuleNode(1)) == 0
-            @test number_of_holes(VariableShapedHole(domain)) == 1
+            @test number_of_holes(Hole(domain)) == 1
             @test number_of_holes(UniformHole(domain, [RuleNode(1), RuleNode(1)])) == 1
-            @test number_of_holes(UniformHole(domain, [VariableShapedHole(domain), RuleNode(1)])) == 2
-            @test number_of_holes(RuleNode(2, [VariableShapedHole(domain), RuleNode(1)])) == 1
+            @test number_of_holes(UniformHole(domain, [Hole(domain), RuleNode(1)])) == 2
+            @test number_of_holes(RuleNode(2, [Hole(domain), RuleNode(1)])) == 1
             @test number_of_holes(UniformHole(domain, [
-                VariableShapedHole(domain),
-                UniformHole(domain, [VariableShapedHole(domain), RuleNode(1)])
+                Hole(domain),
+                UniformHole(domain, [Hole(domain), RuleNode(1)])
             ])) == 4
         end
 
@@ -161,7 +161,7 @@ using Test
             @test isfixedshaped(RuleNode(1, [])) == true
             @test isfixedshaped(UniformHole(domain, [])) == true
 
-            @test isfixedshaped(VariableShapedHole(domain)) == false
+            @test isfixedshaped(Hole(domain)) == false
         end
 
         @testset "isfilled" begin
@@ -169,14 +169,14 @@ using Test
             domain2=BitVector((0, 1, 0, 1, 0))
             @test isfilled(RuleNode(1, [])) == true
             @test isfilled(RuleNode(1, [RuleNode(2)])) == true
-            @test isfilled(RuleNode(1, [VariableShapedHole(domain1)])) == true
-            @test isfilled(RuleNode(1, [VariableShapedHole(domain2)])) == true
+            @test isfilled(RuleNode(1, [Hole(domain1)])) == true
+            @test isfilled(RuleNode(1, [Hole(domain2)])) == true
 
-            @test isfilled(UniformHole(domain1, [VariableShapedHole(domain2)])) == true
-            @test isfilled(UniformHole(domain2, [VariableShapedHole(domain2)])) == false
+            @test isfilled(UniformHole(domain1, [Hole(domain2)])) == true
+            @test isfilled(UniformHole(domain2, [Hole(domain2)])) == false
 
-            @test isfilled(VariableShapedHole(domain1)) == true
-            @test isfilled(VariableShapedHole(domain2)) == false
+            @test isfilled(Hole(domain1)) == true
+            @test isfilled(Hole(domain2)) == false
         end
 
         @testset "get_rule" begin
@@ -184,13 +184,13 @@ using Test
             @test get_rule(RuleNode(99, [RuleNode(3), RuleNode(4)])) == 99
             @test get_rule(RuleNode(2, [RuleNode(3), RuleNode(4)])) == 2
             @test get_rule(UniformHole(domain_of_size_1, [RuleNode(5), RuleNode(6)])) == 2
-            @test get_rule(VariableShapedHole(domain_of_size_1)) == 2
+            @test get_rule(Hole(domain_of_size_1)) == 2
         end
 
         @testset "have_same_shape" begin
             domain = BitVector((1, 1, 1, 1, 1, 1, 1, 1, 1))
             @test have_same_shape(RuleNode(1), RuleNode(2))
-            @test have_same_shape(RuleNode(1), VariableShapedHole(domain))
+            @test have_same_shape(RuleNode(1), Hole(domain))
             @test have_same_shape(RuleNode(1), RuleNode(4, [RuleNode(1)])) == false
             @test have_same_shape(RuleNode(4, [RuleNode(1)]), RuleNode(1)) == false
 
@@ -200,7 +200,7 @@ using Test
             ])
             node2 = RuleNode(9, [
                 RuleNode(2),
-                VariableShapedHole(domain)
+                Hole(domain)
             ])
             @test have_same_shape(node1, node2)
 
@@ -223,7 +223,7 @@ using Test
             @test hasdynamicvalue(RuleNode(1)) == false
             @test hasdynamicvalue(UniformHole(BitVector((1, 0)), [RuleNode(1, "DynamicValue")])) == false
             @test hasdynamicvalue(UniformHole(BitVector((1, 0)), [RuleNode(1)])) == false
-            @test hasdynamicvalue(VariableShapedHole(BitVector((1, 0)))) == false
+            @test hasdynamicvalue(Hole(BitVector((1, 0)))) == false
         end
     end
 end
