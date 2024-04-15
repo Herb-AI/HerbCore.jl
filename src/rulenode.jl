@@ -46,12 +46,20 @@ The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rul
 abstract type AbstractHole <: AbstractRuleNode end
 
 """
+    Hole <: AbstractHole
+
+An [`AbstractUniformHole`](@ref) is a placeholder where certain rules from the grammar can still be applied,
+but all rules in the domain are required to have the same childtypes.
+"""
+abstract type AbstractUniformHole <: AbstractHole end
+
+"""
     UniformHole <: AbstractHole
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied. All rules in the domain are required to have the same childtypes.
 - `children`: The children of this hole in the expression tree.
 """
-mutable struct UniformHole <: AbstractHole
+mutable struct UniformHole <: AbstractUniformHole
     domain::BitVector
     children::Vector{AbstractRuleNode}
 end
