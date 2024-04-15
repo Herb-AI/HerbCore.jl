@@ -418,13 +418,13 @@ contains_hole(rn::RuleNode) = any(contains_hole(c) for c in rn.children)
 contains_hole(hole::AbstractHole) = true
 
 """
-    contains_variable_shaped_hole(rn::RuleNode)
+    contains_nonuniform_hole(rn::RuleNode)
 
 Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
-contains_variable_shaped_hole(rn::AbstractRuleNode) = any(contains_variable_shaped_hole(c)
+contains_nonuniform_hole(rn::AbstractRuleNode) = any(contains_nonuniform_hole(c)
 for c in rn.children)
-contains_variable_shaped_hole(hole::Hole) = true
+contains_nonuniform_hole(hole::Hole) = true
 
 #Shared reference to an empty vector to reduce memory allocations.
 NOCHILDREN = Vector{AbstractRuleNode}()

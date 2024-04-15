@@ -20,7 +20,7 @@ export
        get_node_path,
        number_of_holes,
        contains_hole,
-       contains_variable_shaped_hole,
+       contains_nonuniform_hole,
        get_children,
        get_rule,
        isuniform,
