@@ -153,17 +153,17 @@ using Test
                 ])) == 4
         end
 
-        @testset "isfixedshaped" begin
+        @testset "isuniform" begin
             domain = BitVector((1, 1))
 
-            @test isfixedshaped(RuleNode(1, [RuleNode(2)])) == true
-            @test isfixedshaped(UniformHole(domain, [RuleNode(2)])) == true
+            @test isuniform(RuleNode(1, [RuleNode(2)])) == true
+            @test isuniform(UniformHole(domain, [RuleNode(2)])) == true
 
-            @test isfixedshaped(RuleNode(1)) == true
-            @test isfixedshaped(RuleNode(1, [])) == true
-            @test isfixedshaped(UniformHole(domain, [])) == true
+            @test isuniform(RuleNode(1)) == true
+            @test isuniform(RuleNode(1, [])) == true
+            @test isuniform(UniformHole(domain, [])) == true
 
-            @test isfixedshaped(Hole(domain)) == false
+            @test isuniform(Hole(domain)) == false
         end
 
         @testset "isfilled" begin

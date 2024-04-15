@@ -23,7 +23,7 @@ export
        contains_variable_shaped_hole,
        get_children,
        get_rule,
-       isfixedshaped,
+       isuniform,
        isfilled,
        hasdynamicvalue,
        have_same_shape, AbstractConstraint,

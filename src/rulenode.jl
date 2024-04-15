@@ -5,7 +5,7 @@ Abstract type for representing expression trees.
 An `AbstractRuleNode` is expected to implement the following functions:
 
 - `isfilled(::AbstractRuleNode)::Bool`. True iff the grammar rule this node holds is not ambiguous, i.e. has domain size 1.
-- `isfixedshaped(::AbstractRuleNode)::Bool`. True iff the children of this node are known.
+- `isuniform(::AbstractRuleNode)::Bool`. True iff the children of this node are known.
 - `get_rule(::AbstractRuleNode)::Int`. Returns the index of the grammar rule it represents.
 - `get_children(::AbstractRuleNode)::Vector{AbstractRuleNode}`. Returns the children of this node.
 
@@ -439,13 +439,13 @@ get_children(::Hole)::Vector{AbstractRuleNode} = NOCHILDREN
 get_children(h::UniformHole)::Vector{AbstractRuleNode} = h.children
 
 """
-	isfixedshaped(rn::AbstractRuleNode)
+	isuniform(rn::AbstractRuleNode)
 
 Returns true iff the children of the [`AbstractRuleNode`](@ref) are known.
 """
-isfixedshaped(::RuleNode)::Bool = true
-isfixedshaped(::Hole)::Bool = false
-isfixedshaped(::UniformHole)::Bool = true
+isuniform(::RuleNode)::Bool = true
+isuniform(::Hole)::Bool = false
+isuniform(::UniformHole)::Bool = true
 
 """
 	isfilled(node::AbstractRuleNode)::Bool
