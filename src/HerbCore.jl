@@ -17,7 +17,7 @@ export
        get_rulesequence,
        rulesonleft,
        get_node_at_location,
-       get_node_path,
+       get_path,
        number_of_holes,
        contains_hole,
        contains_nonuniform_hole,

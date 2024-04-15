@@ -387,17 +387,17 @@ function get_node_at_location(root::Hole, location::Vector{Int})
 end
 
 """
-    get_node_path(root::AbstractRuleNode, node::AbstractRuleNode)
+    get_path(root::AbstractRuleNode, node::AbstractRuleNode)
 
 Returns the path from the `root` to the `targetnode`. Returns nothing if no path exists.
 """
-function get_node_path(
+function get_path(
         root::AbstractRuleNode, targetnode::AbstractRuleNode)::Union{Vector{Int}, Nothing}
     if root === targetnode
         return Vector{Int}()
     end
     for (i, child) in enumerate(get_children(root))
-        path = get_node_path(child, targetnode)
+        path = get_path(child, targetnode)
         if !isnothing(path)
             return prepend!(path, i)
         end
