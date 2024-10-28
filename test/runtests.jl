@@ -81,9 +81,9 @@ using Test
                         4,
                         [
                             RuleNode(5, [RuleNode(7)]),
-                            RuleNode( 6, [RuleNode(9, [RuleNode(10)])]),
+                            RuleNode(6, [RuleNode(9, [RuleNode(10)])])
                         ]
-                    ),
+                    )
                 ]
             )
             @test rulesoftype(rulenode, Set((11, 12))) == Set{Int}()
