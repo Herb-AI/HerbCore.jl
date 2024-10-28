@@ -72,24 +72,24 @@ using Test
                    7    9
                           10
             =#
-            rulenode = RuleNode(1,
+            rulenode = RuleNode(
+                1,
                 [
                     RuleNode(2),
                     RuleNode(3),
-                    RuleNode(4,
+                    RuleNode(
+                        4,
                         [
-                            RuleNode(5,
-                                [RuleNode(7)]
-                            ),
-                            RuleNode(6,
-                                [RuleNode(9, [RuleNode(10)])]
-                            )
+                            RuleNode(5, [RuleNode(7)]),
+                            RuleNode( 6, [RuleNode(9, [RuleNode(10)])]),
                         ]
-                    )
+                    ),
                 ]
             )
             @test rulesoftype(rulenode, Set((11, 12))) == Set{Int}()
-            @test rulesoftype(rulenode, Set((1, 3, 7, 9, 10, 15, 23))) == Set((1, 3, 7, 9, 10 ))
+            arg = Set((1, 3, 7, 9, 10, 15, 23))
+            expected = Set((1, 3, 7, 9, 10))
+            @test rulesoftype(rulenode, arg) == expected
             @test rulesoftype(rulenode, Set(1)) == Set(1)
             @test rulesoftype(rulenode, Set{Int}()) == Set{Int}()
             @test rulesoftype(RuleNode(1), Set((1, 2))) == Set(1)
