@@ -86,12 +86,12 @@ using Test
                     )
                 ]
             )
-            @test rulesoftype(rulenode, Set((11, 12))) == Set{Int}()
+            @test isempty(rulesoftype(rulenode, Set((11, 12))))
             ruleset = Set((1, 3, 7, 9, 10, 15, 23))
             expected = Set((1, 3, 7, 9, 10))
             @test rulesoftype(rulenode, ruleset) == expected
             @test rulesoftype(rulenode, Set(1)) == Set(1)
-            @test rulesoftype(rulenode, Set{Int}()) == Set{Int}()
+            @test isempty(rulesoftype(rulenode, Set{Int}()))
             @test rulesoftype(RuleNode(1), Set((1, 2))) == Set(1)
         end
 
