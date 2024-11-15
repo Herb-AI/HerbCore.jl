@@ -258,5 +258,81 @@ using Test
             @test hasdynamicvalue(UniformHole(BitVector((1, 0)), [RuleNode(1)])) == false
             @test hasdynamicvalue(Hole(BitVector((1, 0)))) == false
         end
+
+        @testset "show" begin
+            node = RuleNode(1, [RuleNode(1), RuleNode(2), RuleNode(3)])
+            io = IOBuffer()
+            Base.show(io, node)
+            @test String(take!(io)) == "1{1,2,3}"
+
+            # 12{14,2{4{9}},2{4{6}}}
+            node = RuleNode(12,
+                [
+                    RuleNode(14),
+                    RuleNode(2, [
+                        RuleNode(4, [
+                        RuleNode(9)
+                    ])
+                    ]),
+                    RuleNode(2, [
+                        RuleNode(4, [
+                        RuleNode(6)
+                    ])
+                    ])
+                ]
+            )
+            io = IOBuffer()
+            Base.show(io, node)
+            @test String(take!(io)) == "12{14,2{4{9}},2{4{6}}}"
+        end
+    end
+
+    @testset "UniformHole" begin
+        @testset "show" begin
+            # fshole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}
+            node = UniformHole([0, 0, 1],
+                [
+                    RuleNode(14),
+                    RuleNode(2, [
+                        RuleNode(4, [
+                        RuleNode(9)
+                    ])
+                    ]),
+                    RuleNode(2, [
+                        RuleNode(4, [
+                        RuleNode(6)
+                    ])
+                    ])
+                ]
+            )
+            io = IOBuffer()
+            Base.show(io, node)
+            @test String(take!(io)) == "fshole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}"
+        end
+    end
+
+    @testset "Hole" begin
+        @testset "show" begin
+            # 12{14,2{4{hole[...]}},2{4{6}}}
+            node = RuleNode(12,
+                [
+                    RuleNode(14),
+                    RuleNode(2, [
+                        RuleNode(4, [
+                        Hole(ones(14))
+                    ])
+                    ]),
+                    RuleNode(2, [
+                        RuleNode(4, [
+                        RuleNode(6)
+                    ])
+                    ])
+                ]
+            )
+            io = IOBuffer()
+            Base.show(io, node)
+            @test String(take!(io)) ==
+                  "12{14,2{4{hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
+        end
     end
 end
