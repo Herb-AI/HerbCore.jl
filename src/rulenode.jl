@@ -133,36 +133,35 @@ function Base.hash(node::AbstractHole, h::UInt = zero(UInt))
     return hash(node.domain, h)
 end
 
-function Base.show(io::IO, node::RuleNode; separator = ",", last_child::Bool = false)
+function Base.show(io::IO, node::RuleNode; separator = ",")
     print(io, node.ind)
     if !isempty(node.children)
         print(io, "{")
         for (i, c) in enumerate(node.children)
-            show(io, c, separator = separator, last_child = (i == length(node.children)))
+            show(io, c, separator = separator)
+            if i != length(node.children)
+                print(io, separator)
+            end
         end
         print(io, "}")
-    elseif !last_child
-        print(io, separator)
     end
 end
 
-function Base.show(io::IO, node::AbstractHole; separator = ",", last_child::Bool = false)
+function Base.show(io::IO, node::AbstractHole; _...)
     print(io, "hole[$(node.domain)]")
-    if !last_child
-        print(io, separator)
-    end
 end
 
-function Base.show(io::IO, node::UniformHole; separator = ",", last_child::Bool = false)
+function Base.show(io::IO, node::UniformHole; separator = ",")
     print(io, "fshole[$(node.domain)]")
     if !isempty(node.children)
         print(io, "{")
         for (i, c) in enumerate(node.children)
-            show(io, c, separator = separator, last_child = (i == length(node.children)))
+            show(io, c, separator = separator)
+            if i != length(node.children)
+                print(io, separator)
+            end
         end
         print(io, "}")
-    elseif !last_child
-        print(io, separator)
     end
 end
 
