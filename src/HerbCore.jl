@@ -1,8 +1,10 @@
 module HerbCore
 
+using AbstractTrees
+
+include("grammar.jl")
 include("rulenode.jl")
 include("constraint.jl")
-include("grammar.jl")
 
 export
        AbstractRuleNode,

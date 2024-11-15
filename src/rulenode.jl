@@ -16,6 +16,10 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
+# Interface to AbstractTrees.jl
+AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
+AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
+
 """
     RuleNode <: AbstractRuleNode
 
@@ -34,6 +38,16 @@ mutable struct RuleNode <: AbstractRuleNode
     ind::Int # index in grammar
     _val::Any  #value of _() evals
     children::Vector{AbstractRuleNode}
+end
+
+function RuleNode(ind::Int, grammar::AbstractGrammar)
+    RuleNode(
+        ind, nothing, [Hole(get_domain(grammar, type)) for type in grammar.childtypes[ind]])
+end
+
+function RuleNode(ind::Int, _val::Any, grammar::AbstractGrammar)
+    RuleNode(
+        ind, _val, [Hole(get_domain(grammar, type)) for type in grammar.childtypes[ind]])
 end
 
 """
@@ -62,6 +76,11 @@ abstract type AbstractUniformHole <: AbstractHole end
 mutable struct UniformHole <: AbstractUniformHole
     domain::BitVector
     children::Vector{AbstractRuleNode}
+end
+
+function UniformHole(domain::BitVector, grammar::AbstractGrammar)
+    UniformHole(domain,
+        [Hole(get_domain(grammar, type)) for type in grammar.childtypes[findfirst(domain)]])
 end
 
 """

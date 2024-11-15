@@ -19,3 +19,11 @@ If the grammar is non-probabilistic, the list can be `nothing`.
 For concrete types, see `ContextSensitiveGrammar` within the `HerbGrammar` module.
 """
 abstract type AbstractGrammar end
+
+function Base.show(io::IO, grammar::AbstractGrammar)
+    for i in eachindex(grammar.rules)
+        println(io, i, ": ", grammar.types[i], " = ", grammar.rules[i])
+    end
+end
+
+Base.getindex(grammar::AbstractGrammar, typ::Symbol) = grammar.bytype[typ]
