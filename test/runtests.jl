@@ -1,5 +1,6 @@
 using AbstractTrees: children, nodevalue, treeheight
 using HerbCore
+using HerbGrammar: @csgrammar
 using Test
 
 @testset "HerbCore.jl" verbose=true begin
@@ -344,5 +345,15 @@ using Test
             @test String(take!(io)) ==
                   "12{14,2{4{hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
         end
+    end
+
+    @testset "Grammar" begin
+        g = @csgrammar begin
+            A = 1
+        end
+
+        io = IOBuffer()
+        Base.show(io, g)
+        @test String(take!(io)) == "1: A = 1\n"
     end
 end
