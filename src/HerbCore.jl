@@ -32,4 +32,8 @@ export
        have_same_shape, AbstractConstraint,
        AbstractGrammar
 
+# AbstractTrees interface
+children,
+nodevalue
+
 end # module HerbCore

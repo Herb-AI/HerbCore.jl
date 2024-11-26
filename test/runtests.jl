@@ -1,7 +1,17 @@
+using AbstractTrees: children, nodevalue, treeheight
 using HerbCore
 using Test
 
 @testset "HerbCore.jl" verbose=true begin
+    @testset "AbstractTrees Interface" begin
+        @show typeof(nodevalue(RuleNode(1)))
+        @test nodevalue(RuleNode(1)) == 1
+        @test isempty(children(RuleNode(1)))
+        @test length(children(RuleNode(1, [RuleNode(2), RuleNode(2)]))) == 2
+        @test treeheight(RuleNode(1)) == 0
+        @test treeheight(RuleNode(1, [RuleNode(2), RuleNode(2)])) == 1
+    end
+
     @testset "RuleNode tests" begin
         @testset "Equality tests" begin
             @test RuleNode(1) == RuleNode(1)
