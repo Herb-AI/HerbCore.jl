@@ -40,16 +40,6 @@ mutable struct RuleNode <: AbstractRuleNode
     children::Vector{AbstractRuleNode}
 end
 
-function RuleNode(ind::Int, grammar::AbstractGrammar)
-    RuleNode(
-        ind, nothing, [Hole(get_domain(grammar, type)) for type in grammar.childtypes[ind]])
-end
-
-function RuleNode(ind::Int, _val::Any, grammar::AbstractGrammar)
-    RuleNode(
-        ind, _val, [Hole(get_domain(grammar, type)) for type in grammar.childtypes[ind]])
-end
-
 """
     AbstractHole <: AbstractRuleNode
 
@@ -76,11 +66,6 @@ abstract type AbstractUniformHole <: AbstractHole end
 mutable struct UniformHole <: AbstractUniformHole
     domain::BitVector
     children::Vector{AbstractRuleNode}
-end
-
-function UniformHole(domain::BitVector, grammar::AbstractGrammar)
-    UniformHole(domain,
-        [Hole(get_domain(grammar, type)) for type in grammar.childtypes[findfirst(domain)]])
 end
 
 """
