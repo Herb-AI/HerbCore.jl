@@ -1,8 +1,11 @@
 using AbstractTrees: children, nodevalue, treeheight
+using Aqua
 using HerbCore
 using Test
 
 @testset "HerbCore.jl" verbose=true begin
+    @testset "Aqua Tests" Aqua.test_all(HerbCore)
+
     @testset "AbstractTrees Interface" begin
         @test nodevalue(RuleNode(1)) == 1
         @test isempty(children(RuleNode(1)))
