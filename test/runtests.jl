@@ -1,11 +1,9 @@
 using AbstractTrees: children, nodevalue, treeheight
 using HerbCore
-using HerbGrammar: @csgrammar
 using Test
 
 @testset "HerbCore.jl" verbose=true begin
     @testset "AbstractTrees Interface" begin
-        @show typeof(nodevalue(RuleNode(1)))
         @test nodevalue(RuleNode(1)) == 1
         @test isempty(children(RuleNode(1)))
         @test length(children(RuleNode(1, [RuleNode(2), RuleNode(2)]))) == 2
@@ -348,9 +346,15 @@ using Test
     end
 
     @testset "Grammar" begin
-        g = @csgrammar begin
-            A = 1
+        struct ExGrammar <: AbstractGrammar
+            rules::Vector{Any}
+            types::Vector{Symbol}
+            # ...
+            # only partially implementing the AbstractGrammar interface
+            # to test the Base.show
         end
+
+        g = ExGrammar([1], [:A])
 
         io = IOBuffer()
         Base.show(io, g)
