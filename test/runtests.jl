@@ -1,7 +1,19 @@
+using AbstractTrees: children, nodevalue, treeheight
+using Aqua
 using HerbCore
 using Test
 
 @testset "HerbCore.jl" verbose=true begin
+    @testset "Aqua Tests" Aqua.test_all(HerbCore)
+
+    @testset "AbstractTrees Interface" begin
+        @test nodevalue(RuleNode(1)) == 1
+        @test isempty(children(RuleNode(1)))
+        @test length(children(RuleNode(1, [RuleNode(2), RuleNode(2)]))) == 2
+        @test treeheight(RuleNode(1)) == 0
+        @test treeheight(RuleNode(1, [RuleNode(2), RuleNode(2)])) == 1
+    end
+
     @testset "RuleNode tests" begin
         @testset "Equality tests" begin
             @test RuleNode(1) == RuleNode(1)
@@ -333,6 +345,29 @@ using Test
             Base.show(io, node)
             @test String(take!(io)) ==
                   "12{14,2{4{hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
+        end
+    end
+
+    @testset "Grammar" begin
+        struct ExGrammar <: AbstractGrammar
+            rules::Vector{Any}
+            types::Vector{Symbol}
+            bytype::Dict{Symbol, Vector{Int}}
+            # ...
+            # only partially implementing the AbstractGrammar interface
+            # to test the Base.show
+        end
+
+        g = ExGrammar([1], [:A], Dict([:A => [1]]))
+
+        @testset "show" begin
+            io = IOBuffer()
+            Base.show(io, g)
+            @test String(take!(io)) == "1: A = 1\n"
+        end
+
+        @testset "get_index" begin
+            @test g[:A] == [1]
         end
     end
 end
