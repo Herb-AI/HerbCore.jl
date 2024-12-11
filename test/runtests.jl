@@ -271,6 +271,23 @@ using Test
             @test hasdynamicvalue(Hole(BitVector((1, 0)))) == false
         end
 
+        @testset "@rulenode" begin
+            node = @rulenode 1{2, 3}
+            children = get_children(node)
+            @test get_rule(node) == 1
+            @test get_rule(children[1]) == 2
+            @test get_rule(children[2]) == 3
+
+            node = @rulenode 1
+            children = get_children(node)
+            @test get_rule(node) == 1
+            @test isempty(children)
+
+            node = @rulenode 1{4{5, 6}, 1{2, 3}}
+            @test get_rule(node) == 1
+            @test depth(node) == 3
+        end
+
         @testset "show" begin
             node = RuleNode(1, [RuleNode(1), RuleNode(2), RuleNode(3)])
             io = IOBuffer()

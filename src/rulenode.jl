@@ -95,6 +95,47 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 """
 RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
 
+function _shorthand2rulenode(i::Integer)
+    :(RuleNode($i))
+end
+
+function _shorthand2rulenode(ex::Expr)
+    @assert ex.head==:curly "Input to the @rulenode macro should be in the form of: 1{2,3}"
+    :(RuleNode(
+        # Interpolate the _value_ of the first rule (1 from 1{2,3})
+        # into the first argument of the RuleNode constructor
+        $(ex.args[1]),
+        [
+        # Fill in the array of children recursively with the contents of the
+        # curly brackets (2 and 3 from 1{2,3})
+            $([_shorthand2rulenode(child) for child in ex.args[2:end]]...)
+        ]
+    ))
+end
+
+"""
+    @rulenode 
+
+Construct a [`RuleNode`](@ref) using the shorthand notation [`RuleNode`](@ref)s are printed
+with using [`Base.show`](@ref). Does not support [`AbstractHole`](@ref)s.
+
+# Examples
+
+```jldoctest
+julia> @rulenode 1{4{5,6},1{2,3}}
+1{4{5,6},1{2,3}}
+
+julia> @rulenode 1
+1
+
+julia> @rulenode 1{2, 3}
+1{2,3}
+```
+"""
+macro rulenode(ex::Union{Integer, Expr})
+    _shorthand2rulenode(ex)
+end
+
 """
     RuleNode(ind::Int, _val::Any)
 
