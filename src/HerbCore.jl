@@ -9,6 +9,7 @@ include("constraint.jl")
 export
        AbstractRuleNode,
        RuleNode,
+       @rulenode,
        AbstractHole,
        AbstractUniformHole,
        UniformHole,

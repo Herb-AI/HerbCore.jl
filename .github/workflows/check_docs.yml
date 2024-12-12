@@ -28,18 +28,13 @@ jobs:
       run: |
         julia --project=docs -e '
           using Documenter, HerbCore;
+          DocMeta.setdocmeta!(HerbCore, :DocTestSetup, :(using HerbCore); recursive=true)
           content = """
-            ```@meta
-            CurrentModule = HerbCore
-            DocTestSetup = quote
-                using HerbCore
-            end
-            ```
-
             ```@autodocs
             Modules = [HerbCore]
             ```
           """
+          cd("docs")
           mkpath("src/")
           open("src/index.md", "w") do file
             write(file, content)
