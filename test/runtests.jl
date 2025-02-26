@@ -62,7 +62,7 @@ using Test
                     5  6 -- depth 3
 
             =#
-            rulenode = @rulenode 1{2,3,4{5,6}}
+            rulenode = @rulenode 1{2, 3, 4{5, 6}}
 
             @test node_depth(rulenode, rulenode) == 1
 
@@ -84,22 +84,22 @@ using Test
                    7    9
                           10
             =#
-            rulenode = @rulenode 1{2,3,4{5{7},6{9{10}}}}
+            rulenode = @rulenode 1{2, 3, 4{5{7}, 6{9{10}}}}
             ruleset = Set((1, 3, 7, 9, 10, 15, 23))
             expected = Set((1, 3, 7, 9, 10))
-            hole = Hole([1,1,1,1,0]) # hole domain is irrelevant
-            
+            hole = Hole([1, 1, 1, 1, 0]) # hole domain is irrelevant
+
             @test isempty(rulesoftype(rulenode, Set((11, 12))))
             @test rulesoftype(rulenode, ruleset) == expected
             @test rulesoftype(rulenode, Set(1)) == Set(1)
             @test isempty(rulesoftype(rulenode, Set{Int}()))
             @test rulesoftype(RuleNode(1), Set((1, 2))) == Set(1)
 
-            ignorenode = @rulenode 4{5{7},6{9{10}}}
+            ignorenode = @rulenode 4{5{7}, 6{9{10}}}
 
             @test rulesoftype(rulenode, ruleset, hole) == rulesoftype(rulenode, ruleset)
-            @test rulesoftype(rulenode, ruleset) == Set{Int}([1,3,7,9,10])
-            @test rulesoftype(rulenode, ruleset, ignorenode) == Set{Int}([1,3])
+            @test rulesoftype(rulenode, ruleset) == Set{Int}([1, 3, 7, 9, 10])
+            @test rulesoftype(rulenode, ruleset, ignorenode) == Set{Int}([1, 3])
             @test rulesoftype(hole, ruleset, rulenode) == Set()
             @test rulesoftype(hole, ruleset, hole) == Set()
             @test rulesoftype(rulenode, 2) == rulesoftype(rulenode, Set{Int}(2))
@@ -116,7 +116,7 @@ using Test
                    7    9
                           10 
             =#
-            rulenode = @rulenode 1{2,3,4{5{7},6{9{10}}}}
+            rulenode = @rulenode 1{2, 3, 4{5{7}, 6{9{10}}}}
 
             @test get_rulesequence(rulenode, [3, 1, 1]) == [1, 4, 5, 7]
             @test get_rulesequence(rulenode, [3, 2, 1]) == [1, 4, 6, 9]
@@ -225,15 +225,15 @@ using Test
             @test have_same_shape(RuleNode(1), RuleNode(4, [RuleNode(1)])) == false
             @test have_same_shape(RuleNode(4, [RuleNode(1)]), RuleNode(1)) == false
 
-            node1 = @rulenode 3{1,1}
+            node1 = @rulenode 3{1, 1}
             node2 = RuleNode(9, [
                 RuleNode(2),
                 Hole(domain)
             ])
             @test have_same_shape(node1, node2)
 
-            node1 = @rulenode 3{1,1}
-            node2 = @rulenode 9{2,3{1,1}}
+            node1 = @rulenode 3{1, 1}
+            node2 = @rulenode 9{2, 3{1, 1}}
             @test have_same_shape(node1, node2) == false
         end
 
@@ -270,7 +270,7 @@ using Test
             @test String(take!(io)) == "1{1,2,3}"
 
             # 12{14,2{4{9}},2{4{6}}}
-            node = @rulenode 12{14,2{4{9}},2{4{6}}}
+            node = @rulenode 12{14, 2{4{9}}, 2{4{6}}}
             io = IOBuffer()
             Base.show(io, node)
             @test String(take!(io)) == "12{14,2{4{9}},2{4{6}}}"
