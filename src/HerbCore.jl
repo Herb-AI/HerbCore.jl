@@ -17,6 +17,7 @@ export
        HoleReference, depth,
        node_depth,
        rulesoftype,
+       contains_index,
        swap_node,
        get_rulesequence,
        rulesonleft,

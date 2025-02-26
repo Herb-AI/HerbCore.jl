@@ -290,27 +290,61 @@ function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
 end
 
 """
-    rulesoftype(node::RuleNode, ruleset::Set{Int})
+    rulesoftype(node::RuleNode, ruleset::Set{Int}[, ignoreNode::AbstractRuleNode])
+    rulesoftype(node::RuleNode, rule_index::Int[, ignoreNode::AbstractRuleNode])
 
-Returns every rule in the ruleset that is also used in the [`AbstractRuleNode`](@ref) tree.
+Returns every rule in the ruleset that is also used in the [`AbstractRuleNode`](@ref) tree, but not in the `ignoreNode` subtree.
+
+!!! warning
+    The `ignoreNode` must be a subtree of `node` for it to have an effect.
 """
-function rulesoftype(node::RuleNode, ruleset::Set{Int})
-    retval = Set()
+function rulesoftype(node::RuleNode, ruleset::Set{Int},
+        ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)::Set{Int}
+    retval = Set{Int}()
 
-    if node.ind ∈ ruleset
-        union!(retval, [node.ind])
+    if !isnothing(ignoreNode) && node == ignoreNode
+        return retval
+    end
+
+    if get_rule(node) ∈ ruleset
+        union!(retval, [get_rule(node)])
     end
 
     if isempty(node.children)
         return retval
     else
         for child in node.children
-            union!(retval, rulesoftype(child, ruleset))
+            union!(retval, rulesoftype(child, ruleset, ignoreNode))
         end
 
         return retval
     end
 end
+function rulesoftype(node::RuleNode, rule_index::Int,
+        ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)
+    rulesoftype(node, Set{Int}(rule_index), ignoreNode)
+end
+
+rulesoftype(::Hole, ::Vararg{Any}) = Set{Int}()
+
+"""
+    rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol[, ignoreNode::AbstractRuleNode])
+
+Returns every rule of nonterminal symbol `ruletype` from the `grammar` that is also used in the [`AbstractRuleNode`](@ref) tree, but not in the `ignoreNode` subtree.
+
+!!! warning
+    The `ignoreNode` must be a subtree of `node` for it to have an effect.
+"""
+rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol, ignoreNode::Union{Nothing, RuleNode} = nothing) = rulesoftype(
+    node, Set(grammar[ruletype]), ignoreNode)
+
+"""
+    contains_index(rulenode::RuleNode, index::Int)
+
+Returns true if the rulenode contains the index.
+"""
+contains_index(rulenode::AbstractRuleNode, index::Int) = !isempty(rulesoftype(
+    rulenode, index))
 
 """
     swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
