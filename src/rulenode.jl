@@ -290,14 +290,16 @@ function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
 end
 
 """
-    rulesoftype(node::RuleNode, ruleset::Set{Int}, ignoreNode::Union{Nothing, RuleNode}=nothing)
+    rulesoftype(node::RuleNode, ruleset::Set{Int}[, ignoreNode::AbstractRuleNode])
+    rulesoftype(node::RuleNode, rule_index::Int[, ignoreNode::AbstractRuleNode])
 
 Returns every rule in the ruleset that is also used in the [`AbstractRuleNode`](@ref) tree, but not in the `ignoreNode` subtree.
 
 !!! warning
     The `ignoreNode` must be a subtree of `node` for it to have an effect.
 """
-function rulesoftype(node::RuleNode, ruleset::Set{Int}, ignoreNode::Union{Nothing, RuleNode}=nothing)::Set{Int}
+function rulesoftype(node::RuleNode, ruleset::Set{Int},
+        ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)::Set{Int}
     retval = Set{Int}()
 
     if !isnothing(ignoreNode) && node == ignoreNode
@@ -311,51 +313,38 @@ function rulesoftype(node::RuleNode, ruleset::Set{Int}, ignoreNode::Union{Nothin
     if isempty(node.children)
         return retval
     else
-        for child ∈ node.children
+        for child in node.children
             union!(retval, rulesoftype(child, ruleset, ignoreNode))
         end
 
         return retval
     end
 end
+function rulesoftype(node::RuleNode, rule_index::Int,
+        ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)
+    rulesoftype(node, Set{Int}(rule_index), ignoreNode)
+end
 
-rulesoftype(node::RuleNode, ruleset::Set{Int}, ::Hole) = rulesoftype(node, ruleset, nothing)
-
-rulesoftype(::Hole, ::Set{Int}) = Set{Int}()
-
-rulesoftype(::Hole, ::Set{Int}, ::RuleNode) = Set()
-rulesoftype(::Hole, ::Set{Int}, ::Hole) = Set()
-
-rulesoftype(node::AbstractRuleNode, index::Int) = rulesoftype(node, Set{Int}(index))
+rulesoftype(::Hole, ::Vararg{Any}) = Set{Int}()
 
 """
-	rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol)
+    rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol[, ignoreNode::AbstractRuleNode])
 
-Returns every rule of nonterminal symbol `ruletype` that is also used in the [`AbstractRuleNode`](@ref) tree.
-"""
-rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol) = rulesoftype(node, Set{Int}(grammar[ruletype]))
-
-"""
-    rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol, ignoreNode::RuleNode)
-
-Returns every rule of nonterminal symbol `ruletype` that is also used in the [`AbstractRuleNode`](@ref) tree, but not in the `ignoreNode` subtree.
+Returns every rule of nonterminal symbol `ruletype` from the `grammar` that is also used in the [`AbstractRuleNode`](@ref) tree, but not in the `ignoreNode` subtree.
 
 !!! warning
     The `ignoreNode` must be a subtree of `node` for it to have an effect.
 """
-rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol, ignoreNode::RuleNode) = rulesoftype(node, Set(grammar[ruletype]), ignoreNode)
-rulesoftype(::Hole, ::AbstractGrammar, ::Symbol, ::RuleNode) = Set()
-rulesoftype(::Hole, ::AbstractGrammar, ::Symbol) = Set{Int}()
+rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol, ignoreNode::Union{Nothing, RuleNode} = nothing) = rulesoftype(
+    node, Set(grammar[ruletype]), ignoreNode)
 
 """
     contains_index(rulenode::RuleNode, index::Int)
 
 Returns true if the rulenode contains the index.
 """
-contains_index(rulenode::AbstractRuleNode, index::Int) = !isempty(rulesoftype(rulenode, Set{Int}(index)))
-
-
-
+contains_index(rulenode::AbstractRuleNode, index::Int) = !isempty(rulesoftype(
+    rulenode, index))
 
 """
     swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
