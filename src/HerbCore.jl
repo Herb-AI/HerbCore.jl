@@ -32,6 +32,7 @@ export
        isfilled,
        hasdynamicvalue,
        have_same_shape, AbstractConstraint,
-       AbstractGrammar
+       AbstractGrammar,
+       print_tree
 
 end # module HerbCore
