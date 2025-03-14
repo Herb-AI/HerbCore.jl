@@ -6,7 +6,7 @@ An `AbstractRuleNode` is expected to implement the following functions:
 
 - `isfilled(::AbstractRuleNode)::Bool`. True iff the grammar rule this node holds is not ambiguous, i.e. has domain size 1.
 - `isuniform(::AbstractRuleNode)::Bool`. True iff the children of this node are known.
-- `get_rule(::AbstractRuleNode)::Int`. Returns the index of the grammar rule it represents.
+- `get_rule(::AbstractRuleNode)::Integer`. Returns the index of the grammar rule it represents.
 - `get_children(::AbstractRuleNode)::Vector{AbstractRuleNode}`. Returns the children of this node.
 
 Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
@@ -16,7 +16,7 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
-# Interface to AbstractTrees.jl
+# Integererface to AbstractTrees.jl
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 
@@ -34,11 +34,18 @@ A [`RuleNode`](@ref) consists of:
 !!! compat
     Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
-mutable struct RuleNode <: AbstractRuleNode
-    ind::Int # index in grammar
-    _val::Any  #value of _() evals
+mutable struct RuleNode{T<:Integer} <: AbstractRuleNode
+    ind::T 
+    _val::Any 
     children::Vector{AbstractRuleNode}
+
+    # Default constructor
+    function RuleNode(ind::Integer, _val::Any, children::Vector{<:AbstractRuleNode}=AbstractRuleNode[])
+        new{UInt8}(ind, _val, children)
+    end
 end
+
+
 
 """
     AbstractHole <: AbstractRuleNode
@@ -84,16 +91,16 @@ Contains a hole and the path to the hole from the root of the tree.
 """
 struct HoleReference
     hole::AbstractHole
-    path::Vector{Int}
+    path::Vector{Integer}
 end
 
-RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
+RuleNode(ind::Integer) = RuleNode(ind, nothing, AbstractRuleNode[])
 """
-    RuleNode(ind::Int, children::Vector{AbstractRuleNode})
+    RuleNode(ind::Integer, children::Vector{AbstractRuleNode})
 
 Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `ind` and `children` as subtrees.
 """
-RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
+RuleNode(ind::Integer, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
 
 function _shorthand2rulenode(i::Integer)
     :(RuleNode($i))
@@ -102,7 +109,7 @@ end
 function _shorthand2rulenode(ex::Expr)
     @assert ex.head==:curly "Input to the @rulenode macro should be in the form of: 1{2,3}"
     :(RuleNode(
-        # Interpolate the _value_ of the first rule (1 from 1{2,3})
+        # Integererpolate the _value_ of the first rule (1 from 1{2,3})
         # into the first argument of the RuleNode constructor
         $(ex.args[1]),
         [
@@ -137,20 +144,20 @@ macro rulenode(ex::Union{Integer, Expr})
 end
 
 """
-    RuleNode(ind::Int, _val::Any)
+    RuleNode(ind::Integer, _val::Any)
 
 Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `ind`, 
 `_val` as immediately evaluated value and no children
 
 !!! warning
 	Only use this constructor if you are absolutely certain that a rule is terminal and cannot have children.
-	Use [`RuleNode(ind::Int, grammar::AbstractGrammar)`] for rules that might have children.
+	Use [`RuleNode(ind::Integer, grammar::AbstractGrammar)`] for rules that might have children.
 	In general, [`AbstractHole`](@ref)s should be used as a placeholder when the children of a node are not yet known.   
 
 !!! compat
     Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
-RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
+# RuleNode(ind::Integer, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
 
 Base.:(==)(::RuleNode, ::AbstractHole) = false
 Base.:(==)(::AbstractHole, ::RuleNode) = false
@@ -236,7 +243,7 @@ are found.
 Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
-function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
+function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Integer
     # Helper function for Base.isless
     if !isfilled(rn₁) || !isfilled(rn₂)
         throw(ArgumentError("Unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))"))
@@ -255,12 +262,12 @@ function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::In
 end
 
 """
-    depth(root::RuleNode)::Int
+    depth(root::RuleNode)::Integer
 
 Return the depth of the [`AbstractRuleNode`](@ref) tree rooted at root.
 Holes do count towards the depth.
 """
-function depth(root::AbstractRuleNode)::Int
+function depth(root::AbstractRuleNode)::Integer
     retval = 1
     for c in root.children
         retval = max(retval, depth(c) + 1)
@@ -271,7 +278,7 @@ end
 depth(::Hole) = 1
 
 """
-    node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
+    node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Integer
 
 Return the depth of `node` for an [`AbstractRuleNode`](@ref) tree rooted at `root`.
 Depth is `1` when `root == node`.
@@ -279,7 +286,7 @@ Depth is `1` when `root == node`.
 !!! warning
     `node` must be a subtree of `root` in order for this function to work.
 """
-function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
+function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Integer
     root ≡ node && return 1
     root isa Hole && return 1
     for c in root.children
@@ -290,17 +297,17 @@ function node_depth(root::AbstractRuleNode, node::AbstractRuleNode)::Int
 end
 
 """
-    rulesoftype(node::RuleNode, ruleset::Set{Int}[, ignoreNode::AbstractRuleNode])
-    rulesoftype(node::RuleNode, rule_index::Int[, ignoreNode::AbstractRuleNode])
+    rulesoftype(node::RuleNode, ruleset::Set{<:Integer}[, ignoreNode::AbstractRuleNode])
+    rulesoftype(node::RuleNode, rule_index::Integer[, ignoreNode::AbstractRuleNode])
 
 Returns every rule in the ruleset that is also used in the [`AbstractRuleNode`](@ref) tree, but not in the `ignoreNode` subtree.
 
 !!! warning
     The `ignoreNode` must be a subtree of `node` for it to have an effect.
 """
-function rulesoftype(node::RuleNode, ruleset::Set{Int},
-        ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)::Set{Int}
-    retval = Set{Int}()
+function rulesoftype(node::RuleNode, ruleset::Set{<:Integer},
+        ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)::Set{Integer}
+    retval = Set{Integer}()
 
     if !isnothing(ignoreNode) && node == ignoreNode
         return retval
@@ -320,12 +327,12 @@ function rulesoftype(node::RuleNode, ruleset::Set{Int},
         return retval
     end
 end
-function rulesoftype(node::RuleNode, rule_index::Int,
+function rulesoftype(node::RuleNode, rule_index::Integer,
         ignoreNode::Union{Nothing, AbstractRuleNode} = nothing)
-    rulesoftype(node, Set{Int}(rule_index), ignoreNode)
+    rulesoftype(node, Set{Integer}(rule_index), ignoreNode)
 end
 
-rulesoftype(::Hole, ::Vararg{Any}) = Set{Int}()
+rulesoftype(::Hole, ::Vararg{Any}) = Set{Integer}()
 
 """
     rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol[, ignoreNode::AbstractRuleNode])
@@ -339,20 +346,20 @@ rulesoftype(node::RuleNode, grammar::AbstractGrammar, ruletype::Symbol, ignoreNo
     node, Set(grammar[ruletype]), ignoreNode)
 
 """
-    contains_index(rulenode::RuleNode, index::Int)
+    contains_index(rulenode::RuleNode, index::Integer)
 
 Returns true if the rulenode contains the index.
 """
-contains_index(rulenode::AbstractRuleNode, index::Int) = !isempty(rulesoftype(
+contains_index(rulenode::AbstractRuleNode, index::Integer) = !isempty(rulesoftype(
     rulenode, index))
 
 """
-    swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
+    swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{<:Integer})
 
 Replace a node in `expr`, specified by `path`, with `new_expr`.
 Path is a sequence of child indices, starting from the root node.
 """
-function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
+function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{<:Integer})
     if length(path) == 1
         expr.children[path[begin]] = new_expr
     else
@@ -361,11 +368,11 @@ function swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vec
 end
 
 """
-    swap_node(expr::RuleNode, node::RuleNode, child_index::Int, new_expr::RuleNode)
+    swap_node(expr::RuleNode, node::RuleNode, child_index::Integer, new_expr::RuleNode)
 
 Replace child `i` of a node, a part of larger `expr`, with `new_expr`.
 """
-function swap_node(expr::RuleNode, node::RuleNode, child_index::Int, new_expr::RuleNode)
+function swap_node(expr::RuleNode, node::RuleNode, child_index::Integer, new_expr::RuleNode)
     if expr == node
         node.children[child_index] = new_expr
     else
@@ -376,14 +383,14 @@ function swap_node(expr::RuleNode, node::RuleNode, child_index::Int, new_expr::R
 end
 
 """
-    get_rulesequence(node::RuleNode, path::Vector{Int})
+    get_rulesequence(node::RuleNode, path::Vector{Integer})
 
 Extract the derivation sequence from a path (sequence of child indices) and an [`AbstractRuleNode`](@ref).
 If the path is deeper than the deepest node, it returns what it has.
 """
-function get_rulesequence(node::RuleNode, path::Vector{Int})
+function get_rulesequence(node::RuleNode, path::Vector{<:Integer})
     if node.ind == 0 # sign for empty node 
-        return Vector{Int}()
+        return Vector{Integer}()
     elseif isempty(node.children) # no childnen, nowehere to follow the path; still return the index
         return [node.ind]
     elseif isempty(path)
@@ -397,54 +404,54 @@ function get_rulesequence(node::RuleNode, path::Vector{Int})
         # if only one item left in the path
         # need to access the child with get because it can happen that the child is not yet built
         return append!([node.ind],
-            get_rulesequence(get(node.children, path[begin], RuleNode(0)), Vector{Int}()))
+            get_rulesequence(get(node.children, path[begin], RuleNode(0)), Vector{Integer}()))
     end
 end
 
-get_rulesequence(::AbstractHole, ::Vector{Int}) = Vector{Int}()
+get_rulesequence(::AbstractHole, ::Vector{Integer}) = Vector{Integer}()
 
 """
-    rulesonleft(expr::RuleNode, path::Vector{Int})::Set{Int}
+    rulesonleft(expr::RuleNode, path::Vector{Integer})::Set{Integer}
 
 Finds all rules that are used in the left subtree defined by the path.
 """
-function rulesonleft(expr::RuleNode, path::Vector{Int})
+function rulesonleft(expr::RuleNode, path::Vector{<:Integer})
     if isempty(expr.children)
         # if the encoutered node is terminal or non-expanded non-terminal, return node id
-        Set{Int}(expr.ind)
+        Set{Integer}(expr.ind)
     elseif isempty(path)
         # if path is empty, collect the entire subtree
-        ruleset = Set{Int}(expr.ind)
+        ruleset = Set{Integer}(expr.ind)
         for ch in expr.children
-            union!(ruleset, rulesonleft(ch, Vector{Int}()))
+            union!(ruleset, rulesonleft(ch, Vector{Integer}()))
         end
         return ruleset
     elseif length(path) == 1
         # if there is only one element left in the path, collect all children except the one indicated in the path
-        ruleset = Set{Int}(expr.ind)
+        ruleset = Set{Integer}(expr.ind)
         for i in 1:(path[begin] - 1)
-            union!(ruleset, rulesonleft(expr.children[i], Vector{Int}()))
+            union!(ruleset, rulesonleft(expr.children[i], Vector{Integer}()))
         end
         return ruleset
     else
         # collect all subtrees up to the child indexed in the path
-        ruleset = Set{Int}(expr.ind)
+        ruleset = Set{Integer}(expr.ind)
         for i in 1:(path[begin] - 1)
-            union!(ruleset, rulesonleft(expr.children[i], Vector{Int}()))
+            union!(ruleset, rulesonleft(expr.children[i], Vector{Integer}()))
         end
         union!(ruleset, rulesonleft(expr.children[path[begin]], path[2:end]))
         return ruleset
     end
 end
 
-rulesonleft(h::AbstractHole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
+rulesonleft(h::AbstractHole, loc::Vector{<:Integer}) = Set{Integer}(findall(h.domain))
 
 """
-    get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
+    get_node_at_location(root::AbstractRuleNode, location::Vector{Integer})
 
 Retrieves a [`RuleNode`](@ref) at the given location by reference.
 """
-function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
+function get_node_at_location(root::AbstractRuleNode, location::Vector{<:Integer})
     if location == []
         return root
     else
@@ -453,11 +460,11 @@ function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
 end
 
 """
-    get_node_at_location(root::Hole, location::Vector{Int})
+    get_node_at_location(root::Hole, location::Vector{Integer})
 
 Retrieves the current hole, if location is this very hole. Throws error otherwise.
 """
-function get_node_at_location(root::Hole, location::Vector{Int})
+function get_node_at_location(root::Hole, location::Vector{<:Integer})
     if location == []
         return root
     end
@@ -470,9 +477,9 @@ end
 Returns the path from the `root` to the `targetnode`. Returns nothing if no path exists.
 """
 function get_path(
-        root::AbstractRuleNode, targetnode::AbstractRuleNode)::Union{Vector{Int}, Nothing}
+        root::AbstractRuleNode, targetnode::AbstractRuleNode)::Union{Vector{<:Integer}, Nothing}
     if root === targetnode
-        return Vector{Int}()
+        return Vector{Integer}()
     end
     for (i, child) in enumerate(get_children(root))
         path = get_path(child, targetnode)
@@ -484,7 +491,7 @@ function get_path(
 end
 
 """
-    number_of_holes(rn::AbstractRuleNode)::Int
+    number_of_holes(rn::AbstractRuleNode)::Integer
 
 Recursively counts the number of holes in an [`AbstractRuleNode`](@ref)
 """
@@ -591,4 +598,20 @@ function have_same_shape(node1, node2)
         end
     end
     return true
+end
+
+
+"""
+    smallest_Int_type(n::Integer)
+
+Finds the smallest type for the given integer and returns it. 
+"""
+function smallest_Int_type(n::Integer)
+    if typemin(UInt8) ≤ n ≤ typemax(UInt8)
+        return UInt8
+    elseif typemin(UInt16) ≤ n ≤ typemax(UInt16)
+        return UInt16
+    else
+        return Int
+    end
 end
