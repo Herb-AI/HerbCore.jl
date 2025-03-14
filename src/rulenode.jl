@@ -607,10 +607,11 @@ end
 Finds the smallest type for the given integer and returns it. 
 """
 function smallest_Int_type(n::Integer)
-    for T in (UInt8, UInt16)
-        if typemin(T) ≤ n ≤ typemax(T)
-            return T
-        end
+    if typemin(UInt8) ≤ n ≤ typemax(UInt8)
+        return UInt8
+    elseif typemin(UInt16) ≤ n ≤ typemax(UInt16)
+        return UInt16
+    else
+        return Int
     end
-    return Int
 end

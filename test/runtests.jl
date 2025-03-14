@@ -348,4 +348,13 @@ using Test
             @test g[:A] == [1]
         end
     end
+
+    @testset "Utils" begin
+         @testset "smallest_Int_type" begin
+            @test HerbCore.smallest_Int_type(255) == UInt8
+            @test HerbCore.smallest_Int_type(256) == UInt16
+            @test HerbCore.smallest_Int_type(65536) == Int
+            @test HerbCore.smallest_Int_type(-1) == Int
+        end
+    end
 end
