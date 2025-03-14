@@ -41,7 +41,7 @@ mutable struct RuleNode{T<:Integer} <: AbstractRuleNode
 
     # Default constructor
     function RuleNode(ind::Integer, _val::Any, children::Vector{<:AbstractRuleNode}=AbstractRuleNode[])
-        new{smallest_Int_type(ind)}(ind, _val, children)
+        new{UInt8}(ind, _val, children)
     end
 end
 
