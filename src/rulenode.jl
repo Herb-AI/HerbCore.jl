@@ -174,7 +174,13 @@ end
 
 Construct a [`RuleNode`](@ref) using the shorthand notation [`RuleNode`](@ref)s
 and [`AbstractHole`](@ref)s are printed with using [`Base.show`](@ref).
+
 Does not yet support [`AbstractHole`](@ref)s defined outside of [`HerbCore`](@ref).
+
+!!! note "Hole domain representation"
+    [`AbstractHole`](@ref)s' domains are printed with a `Bool[...]` surrounding them.
+    The macro accepts the domain with or without the `Bool[...]`:
+    `fshole[Bool[1, 1, 0, 0]]{2,3}` and `fshole[1, 1, 0, 0]{2,3}` both work.
 
 # Examples
 
@@ -191,7 +197,6 @@ julia> @rulenode 1{2, 3}
 julia> @rulenode UniformHole[1, 1, 0, 0]{2,3}
 fshole[Bool[1, 1, 0, 0]]{2,3}
 
-julia> # note the flexibility to add Bool[...] like its currently printed in the output
 julia> @rulenode fshole[Bool[1, 1, 0, 0]]{2,3}
 fshole[Bool[1, 1, 0, 0]]{2,3}
 
