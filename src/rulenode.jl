@@ -1,3 +1,5 @@
+using StyledStrings: @styled_str
+
 """
     abstract type AbstractRuleNode end
 
@@ -68,8 +70,11 @@ mutable struct UniformHole <: AbstractUniformHole
     children::Vector{AbstractRuleNode}
 end
 
+UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
+
 """
-Hole <: AbstractHole
+    Hole <: AbstractHole
+
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
@@ -95,29 +100,81 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 """
 RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
 
+const HOLE_NAMES = Dict(
+    "Hole" => Hole,
+    "fshole" => UniformHole,
+    "UniformHole" => UniformHole,
+    "StateHole" => missing  # defined in HerbConstraints, not sure of the best way to do this
+)
+
+function _rulenode_macro_error(ex)
+    throw(ArgumentError(
+        styled"""
+        Input to the @rulenode macro should be in one of the following forms:
+
+            - {code:@rulenode 1\{2,3\}}, which results in {code:{green:RuleNode(1, [RuleNode(2), RuleNode(3)])}}
+            - {code:@rulenode 1\{2,Hole[0, 0, 1]\}}, which results in {code:{green:RuleNode(1, [RuleNode(2), Hole([0, 0, 1])])}}
+
+            but instead received {code:{red:$ex}}
+        """
+    ))
+end
+
+function _check_rulenode_macro_input(ex::Expr)
+    if !(ex.head == :curly || ex.head == :ref)
+        _rulenode_macro_error(ex)
+    elseif ex.head == :ref && !(string(ex.args[1]) in keys(HOLE_NAMES))
+        throw(ArgumentError(
+            styled"""
+            Input to the {code:@rulenode} macro appears to be a hole, but the macro does not support the type: {code:{red:$(ex.args[1])}}. Known options are: $(join([styled"{code:$k}" for k in keys(HOLE_NAMES)], ", ", ", and ")).
+            """
+        ))
+    end
+end
+
 function _shorthand2rulenode(i::Integer)
     :(RuleNode($i))
 end
 
 function _shorthand2rulenode(ex::Expr)
-    @assert ex.head==:curly "Input to the @rulenode macro should be in the form of: 1{2,3}"
-    :(RuleNode(
-        # Interpolate the _value_ of the first rule (1 from 1{2,3})
-        # into the first argument of the RuleNode constructor
-        $(ex.args[1]),
-        [
-        # Fill in the array of children recursively with the contents of the
-        # curly brackets (2 and 3 from 1{2,3})
-            $([_shorthand2rulenode(child) for child in ex.args[2:end]]...)
-        ]
-    ))
+    _check_rulenode_macro_input(ex)
+    if ex.head == :curly # case with children
+        constructor, index_or_domain = if ex.args[1] isa Integer
+            (RuleNode, ex.args[1])
+        elseif ex.args[1].head == :ref
+            if ex.args[1].args[2] isa Expr
+                (HOLE_NAMES[string(ex.args[1].args[1])],
+                    BitVector(ex.args[1].args[2].args[2:end]))
+            elseif string(ex.args[1].args[1]) in keys(HOLE_NAMES)
+                (HOLE_NAMES[string(ex.args[1].args[1])], BitVector(ex.args[1].args[2:end]))
+            end
+        else
+            _rulenode_macro_error(ex)
+        end
+        return :($constructor(
+            # Interpolate the _value_ of the first rule (1 from 1{2,3})
+            # into the first argument of the RuleNode constructor
+            $index_or_domain,
+            [
+            # Fill in the array of children recursively with the contents of the
+            # curly brackets (2 and 3 from 1{2,3})
+                $([_shorthand2rulenode(child) for child in ex.args[2:end]]...)
+            ]
+        ))
+    elseif ex.head == :ref # <:AbstractHole case, no children
+        hole_constructor = HOLE_NAMES[string(ex.args[1])]
+        return :($hole_constructor(
+            $(BitVector(ex.args[2:end]))
+        ))
+    end
 end
 
 """
     @rulenode 
 
-Construct a [`RuleNode`](@ref) using the shorthand notation [`RuleNode`](@ref)s are printed
-with using [`Base.show`](@ref). Does not support [`AbstractHole`](@ref)s.
+Construct a [`RuleNode`](@ref) using the shorthand notation [`RuleNode`](@ref)s
+and [`AbstractHole`](@ref)s are printed with using [`Base.show`](@ref).
+Does not yet support [`AbstractHole`](@ref)s defined outside of [`HerbCore`](@ref).
 
 # Examples
 
@@ -130,6 +187,17 @@ julia> @rulenode 1
 
 julia> @rulenode 1{2, 3}
 1{2,3}
+
+julia> @rulenode UniformHole[1, 1, 0, 0]{2,3}
+fshole[Bool[1, 1, 0, 0]]{2,3}
+
+julia> # note the flexibility to add Bool[...] like its currently printed in the output
+julia> @rulenode fshole[Bool[1, 1, 0, 0]]{2,3}
+fshole[Bool[1, 1, 0, 0]]{2,3}
+
+julia> @rulenode Hole[1, 1, 0, 0]
+hole[Bool[1, 1, 0, 0]]
+
 ```
 """
 macro rulenode(ex::Union{Integer, Expr})
