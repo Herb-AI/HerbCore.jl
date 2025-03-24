@@ -1,5 +1,6 @@
 module HerbCore
 
+using StaticArrays
 using AbstractTrees
 
 include("grammar.jl")

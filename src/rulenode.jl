@@ -16,7 +16,7 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
-# Integererface to AbstractTrees.jl
+# Interface to AbstractTrees.jl
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 
@@ -34,17 +34,17 @@ A [`RuleNode`](@ref) consists of:
 !!! compat
     Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
-mutable struct RuleNode{T<:Integer} <: AbstractRuleNode
-    ind::T 
-    _val::Any 
-    children::Vector{AbstractRuleNode}
+struct RuleNode{T<:Integer, N} <: AbstractRuleNode
+    ind::T
+    _val::Any
+    children::SizedVector{N, AbstractRuleNode}
 
-    # Default constructor
-    function RuleNode(ind::Integer, _val::Any, children::Vector{<:AbstractRuleNode}=AbstractRuleNode[])
-        new{UInt8}(ind, _val, children)
+    function RuleNode(ind::Integer, _val::Any, children::AbstractVector{<:AbstractRuleNode})
+        N = length(children)
+        static_children = MVector{N, AbstractRuleNode}(children)
+        return new{UInt8, N}(ind, _val, static_children)
     end
 end
-
 
 
 """
@@ -94,7 +94,7 @@ struct HoleReference
     path::Vector{Integer}
 end
 
-RuleNode(ind::Integer) = RuleNode(ind, nothing, AbstractRuleNode[])
+RuleNode(ind::Integer) = RuleNode(ind, nothing, MVector{0, AbstractRuleNode}())
 """
     RuleNode(ind::Integer, children::Vector{AbstractRuleNode})
 
@@ -109,7 +109,7 @@ end
 function _shorthand2rulenode(ex::Expr)
     @assert ex.head==:curly "Input to the @rulenode macro should be in the form of: 1{2,3}"
     :(RuleNode(
-        # Integererpolate the _value_ of the first rule (1 from 1{2,3})
+        # Interpolate the _value_ of the first rule (1 from 1{2,3})
         # into the first argument of the RuleNode constructor
         $(ex.args[1]),
         [
@@ -157,7 +157,7 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 !!! compat
     Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
-# RuleNode(ind::Integer, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
+RuleNode(ind::Integer, _val::Any) = RuleNode(ind, _val, MVector{0, AbstractRuleNode}())
 
 Base.:(==)(::RuleNode, ::AbstractHole) = false
 Base.:(==)(::AbstractHole, ::RuleNode) = false
