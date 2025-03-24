@@ -1,4 +1,5 @@
 using StyledStrings: @styled_str
+using MacroTools: @capture, postwalk, prewalk, isexpr
 
 """
     abstract type AbstractRuleNode end
@@ -100,33 +101,15 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 """
 RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
 
-const HOLE_NAMES = Dict(
-    "Hole" => Hole,
-    "fshole" => UniformHole,
-    "UniformHole" => UniformHole,
-    "StateHole" => missing  # defined in HerbConstraints, not sure of the best way to do this
-)
-
-function _rulenode_macro_error(ex)
-    throw(ArgumentError(
-        styled"""
-        Input to the @rulenode macro should be in one of the following forms:
-
-            - {code:@rulenode 1\{2,3\}}, which results in {code:{green:RuleNode(1, [RuleNode(2), RuleNode(3)])}}
-            - {code:@rulenode 1\{2,Hole[0, 0, 1]\}}, which results in {code:{green:RuleNode(1, [RuleNode(2), Hole([0, 0, 1])])}}
-
-            but instead received {code:{red:$ex}}
-        """
-    ))
-end
-
-function _check_rulenode_macro_input(ex::Expr)
-    if !(ex.head == :curly || ex.head == :ref)
-        _rulenode_macro_error(ex)
-    elseif ex.head == :ref && !(string(ex.args[1]) in keys(HOLE_NAMES))
+function _get_hole_name(holetype)
+    if isdefined(@__MODULE__, holetype)
+        return holetype
+    elseif holetype in keys(HOLE_NAMES)
+        return HOLE_NAMES[holetype]
+    else
         throw(ArgumentError(
             styled"""
-            Input to the {code:@rulenode} macro appears to be a hole, but the macro does not support the type: {code:{red:$(ex.args[1])}}. Known options are: $(join([styled"{code:$k}" for k in keys(HOLE_NAMES)], ", ", ", and ")).
+            Input to the {code:@rulenode} macro appears to be a hole, but the macro does not support the type: {code:{red:$holetype}}. Known nicknames are: $(join([styled"{code:$k}" for k in HOLE_NAMES], ", ", ", and ")), or any concrete subtype of {code:AbstractHole}.`.
             """
         ))
     end
@@ -137,36 +120,39 @@ function _shorthand2rulenode(i::Integer)
 end
 
 function _shorthand2rulenode(ex::Expr)
-    _check_rulenode_macro_input(ex)
-    if ex.head == :curly # case with children
-        constructor, index_or_domain = if ex.args[1] isa Integer
-            (RuleNode, ex.args[1])
-        elseif ex.args[1].head == :ref
-            if ex.args[1].args[2] isa Expr
-                (HOLE_NAMES[string(ex.args[1].args[1])],
-                    BitVector(ex.args[1].args[2].args[2:end]))
-            elseif string(ex.args[1].args[1]) in keys(HOLE_NAMES)
-                (HOLE_NAMES[string(ex.args[1].args[1])], BitVector(ex.args[1].args[2:end]))
-            end
-        else
-            _rulenode_macro_error(ex)
-        end
-        return :($constructor(
-            # Interpolate the _value_ of the first rule (1 from 1{2,3})
-            # into the first argument of the RuleNode constructor
-            $index_or_domain,
-            [
-            # Fill in the array of children recursively with the contents of the
-            # curly brackets (2 and 3 from 1{2,3})
-                $([_shorthand2rulenode(child) for child in ex.args[2:end]]...)
-            ]
-        ))
-    elseif ex.head == :ref # <:AbstractHole case, no children
-        hole_constructor = HOLE_NAMES[string(ex.args[1])]
-        return :($hole_constructor(
-            $(BitVector(ex.args[2:end]))
-        ))
+    # holes with children
+    ex = postwalk(ex) do x
+        @capture(x, holetype_[Bool[domain__]]{children__}) ||
+            @capture(x, holetype_[domain__]{children__}) || return x
+        hole_constructor = _get_hole_name(holetype)
+        return :($hole_constructor(BitVector([$(domain...)]), {$(children...)}))
     end
+
+    # holes without children
+    # need to prewalk here becuase otherwise we try to parse UniformHole[Bool[...]] first as a
+    # hole with type Bool, instead of a UniformHole
+    ex = prewalk(ex) do x
+        @capture(x, holetype_Symbol[Bool[domain__]]) ||
+            @capture(x, holetype_Symbol[domain__]) || return x
+        hole_constructor = _get_hole_name(holetype)
+        return :($hole_constructor(BitVector([$(domain...)])))
+    end
+
+    # rulenodes with children
+    ex = postwalk(ex) do x
+        @capture(x, index_Int{children__}) || return x
+        return :(RuleNode($index, {$(children...)}))
+    end
+
+    # rulenodes without children
+    ex = postwalk(ex) do x
+        @capture(x, {children__}) || return x
+        children = [isexpr(child, Int, Integer) ? :(RuleNode($child)) : child
+                    for child in children]
+        return :([$(children...)])
+    end
+
+    return ex
 end
 
 """
