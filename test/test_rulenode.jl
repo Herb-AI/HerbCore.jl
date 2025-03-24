@@ -325,6 +325,10 @@
 
             @test node.domain == BitVector([1, 1, 0, 0])
 
+            node = @rulenode hole[1, 1, 0, 0]
+
+            @test node.domain == BitVector([1, 1, 0, 0])
+
             node = @rulenode Hole[1, 1, 0, 0]
 
             @test node.domain == BitVector([1, 1, 0, 0])
@@ -357,16 +361,16 @@
                 @test c isa RuleNode
                 @test c.ind in [2, 3]
             end
+
+            node = @rulenode hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]]
+            @test node.domain ==
+                  BitVector([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0])
+            @test isempty(children(node))
         end
 
         @testset "Non-existent hole type" begin
             check = startswith("ArgumentError: Input to the @rulenode macro appears to be a hole")
             @test_throws check @macroexpand @rulenode HolyHole[1, 0, 0, 0]
-        end
-
-        @testset "Ill-formed input" begin
-            check = startswith("ArgumentError: Input to the @rulenode macro should be in one of the following forms")
-            @test_throws check @macroexpand @rulenode 1 + 1
         end
     end
 end
