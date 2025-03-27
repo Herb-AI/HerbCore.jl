@@ -104,12 +104,10 @@ RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing
 function _get_hole_name(holetype)
     if isdefined(@__MODULE__, holetype)
         return holetype
-    elseif holetype in keys(HOLE_NAMES)
-        return HOLE_NAMES[holetype]
     else
         throw(ArgumentError(
             styled"""
-            Input to the {code:@rulenode} macro appears to be a hole, but the macro does not support the type: {code:{red:$holetype}}. Known nicknames are: $(join([styled"{code:$k}" for k in HOLE_NAMES], ", ", ", and ")), or any concrete subtype of {code:AbstractHole}.`.
+            Input to the {code:@rulenode} macro appears to be a hole, but the macro does not support the type: {code:{red:$holetype}}. The macro currently supports concrete subtypes of {code:AbstractHole}s {bold:that are defined in {code:HerbCore.jl}}.
             """
         ))
     end

@@ -255,7 +255,7 @@
 
     @testset "UniformHole" begin
         @testset "show" begin
-            # fshole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}
+            # UniformHole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}
             node = UniformHole([0, 0, 1],
                 [
                     RuleNode(14),
@@ -273,13 +273,13 @@
             )
             io = IOBuffer()
             Base.show(io, node)
-            @test String(take!(io)) == "fshole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}"
+            @test String(take!(io)) == "UniformHole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}"
         end
     end
 
     @testset "Hole" begin
         @testset "show" begin
-            # 12{14,2{4{hole[...]}},2{4{6}}}
+            # 12{14,2{4{Hole[...]}},2{4{6}}}
             node = RuleNode(12,
                 [
                     RuleNode(14),
@@ -298,7 +298,7 @@
             io = IOBuffer()
             Base.show(io, node)
             @test String(take!(io)) ==
-                  "12{14,2{4{hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
+                  "12{14,2{4{Hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
         end
     end
 
@@ -321,14 +321,6 @@
         end
 
         @testset "just Holes" begin
-            node = @rulenode fshole[1, 1, 0, 0]
-
-            @test node.domain == BitVector([1, 1, 0, 0])
-
-            node = @rulenode hole[1, 1, 0, 0]
-
-            @test node.domain == BitVector([1, 1, 0, 0])
-
             node = @rulenode Hole[1, 1, 0, 0]
 
             @test node.domain == BitVector([1, 1, 0, 0])
@@ -337,7 +329,8 @@
 
             @test node.domain == BitVector([1, 1, 0, 0])
 
-            node = @rulenode fshole[1, 1, 0, 0]{fshole[0, 0, 1, 1], fshole[0, 0, 1, 1]}
+            node = @rulenode UniformHole[1, 1, 0, 0]{
+                UniformHole[0, 0, 1, 1], UniformHole[0, 0, 1, 1]}
 
             @test node.domain == BitVector([1, 1, 0, 0])
             for c in children(node)
@@ -362,7 +355,7 @@
                 @test c.ind in [2, 3]
             end
 
-            node = @rulenode hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]]
+            node = @rulenode Hole[Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]]
             @test node.domain ==
                   BitVector([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0])
             @test isempty(children(node))

@@ -6,13 +6,6 @@ include("grammar.jl")
 include("rulenode.jl")
 include("constraint.jl")
 
-const HOLE_NAMES = Dict()
-
-function __init__()
-    HOLE_NAMES[:hole] = Hole
-    HOLE_NAMES[:fshole] = UniformHole
-end
-
 export
        AbstractRuleNode,
        RuleNode,
