@@ -279,7 +279,7 @@ using Test
 
     @testset "UniformHole" begin
         @testset "show" begin
-            # fshole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}
+            # UniformHole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}
             node = UniformHole([0, 0, 1],
                 [
                     RuleNode(14),
@@ -297,13 +297,13 @@ using Test
             )
             io = IOBuffer()
             Base.show(io, node)
-            @test String(take!(io)) == "fshole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}"
+            @test String(take!(io)) == "UniformHole[Bool[0, 0, 1]]{14,2{4{9}},2{4{6}}}"
         end
     end
 
     @testset "Hole" begin
         @testset "show" begin
-            # 12{14,2{4{hole[...]}},2{4{6}}}
+            # 12{14,2{4{Hole[...]}},2{4{6}}}
             node = RuleNode(12,
                 [
                     RuleNode(14),
@@ -322,7 +322,7 @@ using Test
             io = IOBuffer()
             Base.show(io, node)
             @test String(take!(io)) ==
-                  "12{14,2{4{hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
+                  "12{14,2{4{Hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
         end
     end
 

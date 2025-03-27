@@ -180,33 +180,19 @@ end
 
 function Base.show(io::IO, node::RuleNode; separator = ",")
     print(io, node.ind)
-    if !isempty(node.children)
-        print(io, "{")
-        for (i, c) in enumerate(node.children)
-            show(io, c, separator = separator)
-            if i != length(node.children)
-                print(io, separator)
-            end
-        end
-        print(io, "}")
+    if !isempty(children(node))
+        Base.show_enclosed_list(io, "{", children(node), separator, "}", 0)
     end
 end
 
 function Base.show(io::IO, node::AbstractHole; _...)
-    print(io, "hole[$(node.domain)]")
+    print(io, "Hole[$(node.domain)]")
 end
 
 function Base.show(io::IO, node::UniformHole; separator = ",")
-    print(io, "fshole[$(node.domain)]")
+    print(io, "UniformHole[$(node.domain)]")
     if !isempty(node.children)
-        print(io, "{")
-        for (i, c) in enumerate(node.children)
-            show(io, c, separator = separator)
-            if i != length(node.children)
-                print(io, separator)
-            end
-        end
-        print(io, "}")
+        Base.show_enclosed_list(io, "{", children(node), separator, "}", 0)
     end
 end
 
