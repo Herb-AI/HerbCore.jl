@@ -1,3 +1,6 @@
+using StyledStrings: @styled_str
+using MacroTools: @capture, postwalk, prewalk, isexpr
+
 """
     abstract type AbstractRuleNode end
 
@@ -68,8 +71,11 @@ mutable struct UniformHole <: AbstractUniformHole
     children::Vector{AbstractRuleNode}
 end
 
+UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
+
 """
-Hole <: AbstractHole
+    Hole <: AbstractHole
+
 
 - `domain`: A bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
@@ -95,29 +101,70 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 """
 RuleNode(ind::Int, children::Vector{<:AbstractRuleNode}) = RuleNode(ind, nothing, children)
 
+function _get_hole_name(holetype)
+    if isdefined(@__MODULE__, holetype)
+        return holetype
+    else
+        throw(ArgumentError(
+            styled"""
+            Input to the {code:@rulenode} macro appears to be a hole, but the macro does not support the type: {code:{red:$holetype}}. The macro currently supports concrete subtypes of {code:AbstractHole}s {bold:that are defined in {code:HerbCore.jl}}.
+            """
+        ))
+    end
+end
+
 function _shorthand2rulenode(i::Integer)
     :(RuleNode($i))
 end
 
 function _shorthand2rulenode(ex::Expr)
-    @assert ex.head==:curly "Input to the @rulenode macro should be in the form of: 1{2,3}"
-    :(RuleNode(
-        # Interpolate the _value_ of the first rule (1 from 1{2,3})
-        # into the first argument of the RuleNode constructor
-        $(ex.args[1]),
-        [
-        # Fill in the array of children recursively with the contents of the
-        # curly brackets (2 and 3 from 1{2,3})
-            $([_shorthand2rulenode(child) for child in ex.args[2:end]]...)
-        ]
-    ))
+    # holes with children
+    ex = postwalk(ex) do x
+        @capture(x, holetype_[Bool[domain__]]{children__}) ||
+            @capture(x, holetype_[domain__]{children__}) || return x
+        hole_constructor = _get_hole_name(holetype)
+        return :($hole_constructor(BitVector([$(domain...)]), {$(children...)}))
+    end
+
+    # holes without children
+    # need to prewalk here becuase otherwise we try to parse UniformHole[Bool[...]] first as a
+    # hole with type Bool, instead of a UniformHole
+    ex = prewalk(ex) do x
+        @capture(x, holetype_Symbol[Bool[domain__]]) ||
+            @capture(x, holetype_Symbol[domain__]) || return x
+        hole_constructor = _get_hole_name(holetype)
+        return :($hole_constructor(BitVector([$(domain...)])))
+    end
+
+    # rulenodes with children
+    ex = postwalk(ex) do x
+        @capture(x, index_Int{children__}) || return x
+        return :(RuleNode($index, {$(children...)}))
+    end
+
+    # rulenodes without children
+    ex = postwalk(ex) do x
+        @capture(x, {children__}) || return x
+        children = [isexpr(child, Int, Integer) ? :(RuleNode($child)) : child
+                    for child in children]
+        return :([$(children...)])
+    end
+
+    return ex
 end
 
 """
     @rulenode 
 
-Construct a [`RuleNode`](@ref) using the shorthand notation [`RuleNode`](@ref)s are printed
-with using [`Base.show`](@ref). Does not support [`AbstractHole`](@ref)s.
+Construct a [`RuleNode`](@ref) using the shorthand notation [`RuleNode`](@ref)s
+and [`AbstractHole`](@ref)s are printed with using [`Base.show`](@ref).
+
+Does not yet support [`AbstractHole`](@ref)s defined outside of [`HerbCore`](@ref).
+
+!!! note "Hole domain representation"
+    [`AbstractHole`](@ref)s' domains are printed with a `Bool[...]` surrounding them.
+    The macro accepts the domain with or without the `Bool[...]`:
+    `UniformHole[Bool[1, 1, 0, 0]]{2,3}` and `UniformHole[1, 1, 0, 0]{2,3}` both work.
 
 # Examples
 
@@ -130,6 +177,13 @@ julia> @rulenode 1
 
 julia> @rulenode 1{2, 3}
 1{2,3}
+
+julia> @rulenode UniformHole[1, 1, 0, 0]{2,3}
+UniformHole[Bool[1, 1, 0, 0]]{2,3}
+
+julia> @rulenode Hole[1, 1, 0, 0]
+Hole[Bool[1, 1, 0, 0]]
+
 ```
 """
 macro rulenode(ex::Union{Integer, Expr})
