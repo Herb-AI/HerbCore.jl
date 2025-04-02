@@ -124,6 +124,11 @@
             @test get_node_at_location(rulenode, Vector{Int64}()) isa UniformHole
             @test get_node_at_location(rulenode, [1]).ind == 3
             @test get_node_at_location(rulenode, [2]).ind == 4
+            @testset "Hole" begin
+                hole = Hole(BitVector([1, 1]))
+                @test get_node_at_location(hole, Vector{Int}()).domain == hole.domain #because hole != hole 
+                @test_throws Exception get_node_at_location(hole, [1])
+            end
         end
 
         @testset "get_path" begin
@@ -251,6 +256,55 @@
             Base.show(io, node)
             @test String(take!(io)) == "12{14,2{4{9}},2{4{6}}}"
         end
+        @testset "swap_node" begin
+            child1 = RuleNode(2, 1, [])
+            child2 = RuleNode(3, 2, [])
+            root = RuleNode(1, 0, [child1, child2])
+            new_node = RuleNode(4, 99, [])
+
+            swap_node(root, new_node, [1])
+            @test root.children[1] === new_node
+            @test root.children[1].ind == 4
+            @test root.children[1]._val == 99
+
+            # Reset tree
+            root.children[1] = child1
+
+            swap_node(root, root, 2, new_node)
+            @test root.children[2] === new_node
+            @test root.children[2].ind == 4
+            @test root.children[2]._val == 99
+        end
+        @testset "rulesonleft" begin
+            #=      1
+                /   |   \
+                2    3    4
+                    / \   / \
+                    5  6  7  8    
+            =#
+            node = @rulenode 1{2, 3{5, 6}, 4{7, 8}}
+            @test rulesonleft(node, Vector{Int}()) ==
+                  Set{Int}([1, 2, 3, 4, 5, 6, 7, 8])
+            @test rulesonleft(node, [2, 1]) == Set{Int}([1, 2, 3])
+            @test rulesonleft(node, [2, 2]) == Set{Int}([1, 2, 3, 5])
+        end
+        @testset "contains_hole" begin
+            hole = Hole([1, 1])
+            node = RuleNode(1, [RuleNode(2), RuleNode(3, [hole])])
+
+            @test contains_hole(node) == true
+            @test contains_hole(RuleNode(2)) == false
+            @test contains_hole(hole) == true
+        end
+        @testset "contains_nonuniform_hole" begin
+            hole = Hole([1, 1])
+            uniform_hole = UniformHole([1, 0], [])
+            node = RuleNode(1, [RuleNode(2), RuleNode(3, [hole])])
+            node2 = RuleNode(1, [RuleNode(2), RuleNode(3, [uniform_hole])])
+
+            @test contains_nonuniform_hole(node) == true
+            @test contains_nonuniform_hole(node2) == false
+        end
     end
 
     @testset "UniformHole" begin
@@ -300,6 +354,13 @@
             @test String(take!(io)) ==
                   "12{14,2{4{Hole[Bool[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]}},2{4{6}}}"
         end
+        @testset "Hole not Equal Hole" begin
+            hole1 = Hole([1, 1, 0, 1])
+            hole2 = Hole([1, 1, 0, 1])
+            hole3 = hole1
+            @test hole1 != hole2
+            @test hole3 != hole1
+        end
     end
 
     @testset "@rulenode" begin
@@ -318,6 +379,12 @@
             node = @rulenode 1{4{5, 6}, 1{2, 3}}
             @test get_rule(node) == 1
             @test depth(node) == 3
+
+            node2 = copy(node)
+            @test node2 == node
+            @test node2.ind == node.ind
+            @test node2._val == node._val
+            @test node2.children == node.children
         end
 
         @testset "just Holes" begin
@@ -335,6 +402,14 @@
             @test node.domain == BitVector([1, 1, 0, 0])
             for c in children(node)
                 @test c.domain == BitVector([0, 0, 1, 1])
+            end
+
+            node2 = copy(node)
+            @test node2.domain == node.domain
+
+            @testset "Hole hash test" begin
+                node = @rulenode Hole[1, 1, 0, 0]
+                @test hash(node) == hash(node.domain)
             end
         end
 
