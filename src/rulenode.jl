@@ -289,7 +289,8 @@ If both [`RuleNode`](@ref)s have the same index, a depth-first search is
 performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
-Base.isless(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+Base.isless(
+    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
@@ -391,21 +392,25 @@ Returns every rule of nonterminal symbol `ruletype` from the `grammar` that is a
 !!! warning
 	The `ignoreNode` must be a subtree of `node` for it to have an effect.
 """
-rulesoftype(
-node::RuleNode,
-grammar::AbstractGrammar,
-ruletype::Symbol,
-ignoreNode::Union{Nothing, RuleNode} = nothing
-) = rulesoftype(
-    node, Set(grammar[ruletype]), ignoreNode)
+function rulesoftype(
+        node::RuleNode,
+        grammar::AbstractGrammar,
+        ruletype::Symbol,
+        ignoreNode::Union{Nothing, RuleNode} = nothing
+)
+    rulesoftype(
+        node, Set(grammar[ruletype]), ignoreNode)
+end
 
 """
 	contains_index(rulenode::RuleNode, index::Int)
 
 Returns true if the rulenode contains the index.
 """
-contains_index(rulenode::AbstractRuleNode, index::Int) = !isempty(rulesoftype(
-    rulenode, index))
+function contains_index(rulenode::AbstractRuleNode, index::Int)
+    !isempty(rulesoftype(
+        rulenode, index))
+end
 
 """
 	swap_node(expr::AbstractRuleNode, new_expr::AbstractRuleNode, path::Vector{Int})
@@ -549,8 +554,10 @@ end
 
 Recursively counts the number of holes in an [`AbstractRuleNode`](@ref)
 """
-number_of_holes(rn::RuleNode) = reduce(
-    +, [number_of_holes(c) for c in rn.children], init = 0)
+function number_of_holes(rn::RuleNode)
+    reduce(
+        +, [number_of_holes(c) for c in rn.children], init = 0)
+end
 function number_of_holes(rn::UniformHole)
     1 + reduce(+, [number_of_holes(c) for c in rn.children], init = 0)
 end
@@ -569,8 +576,10 @@ contains_hole(hole::AbstractHole) = true
 
 Checks if an [`AbstractRuleNode`](@ref) tree contains a [`Hole`](@ref).
 """
-contains_nonuniform_hole(rn::AbstractRuleNode) = any(contains_nonuniform_hole(c)
-for c in rn.children)
+function contains_nonuniform_hole(rn::AbstractRuleNode)
+    any(contains_nonuniform_hole(c)
+    for c in rn.children)
+end
 contains_nonuniform_hole(hole::Hole) = true
 
 #Shared reference to an empty vector to reduce memory allocations.
