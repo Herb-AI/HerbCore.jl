@@ -480,6 +480,14 @@
 				@test node.domain == expected_node.domain
 				@test node.children == expected_node.children
 			end
+            @testset "error" begin
+                struct TestNodeWithoutImpl <: AbstractRuleNode end
+                n_rules = 5
+                test_node = TestNodeWithoutImpl()
+                @test_throws ErrorException update_rule_indices!(test_node, n_rules)
+                mapping = Dict(1 => 5, 2 => 6, 3 => 1)
+                @test_throws ErrorException update_rule_indices!(test_node, n_rules, mapping)
+            end
 			# TODO: reduce domain?
 		end
 	end
