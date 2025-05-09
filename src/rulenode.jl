@@ -58,6 +58,51 @@ mutable struct RuleNode <: AbstractRuleNode
 end
 
 """
+	update_rule_indices!(node::RuleNode, n_rules::Integer)
+
+Processes and updates current node in a tree as required when grammar size changes.
+For `RuleNode` instances, this function only passes through to children.
+Recursively processes all child nodes of the tree.
+
+# Arguments
+- `node`: The current `RuleNode` being processed
+- `n_rules`: The new number of rules in the grammar
+"""
+function update_rule_indices!(node::RuleNode, n_rules::Integer)
+    children = get_children(node)
+    for child in children
+        update_rule_indices!(child, n_rules)
+    end
+end
+
+"""
+	update_rule_indices!(node::RuleNode, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
+
+Processes and updates current node in a tree as required when grammar size changes.
+For `RuleNode` instances, this function only remaps the rule indices.
+Recursively processes all child nodes of the tree.
+
+# Arguments
+- `node`: The current `RuleNode` being processed
+- `n_rules`: The new number of rules in the grammar
+- `mapping`: A dictionary mapping old rule indices to new rule indices
+"""
+function update_rule_indices!(
+        node::RuleNode,
+        n_rules::Integer,
+        mapping::AbstractDict{<:Integer, <:Integer}
+)
+    rule_ind = get_rule(node)
+    if haskey(mapping, rule_ind)
+        node.ind = mapping[rule_ind]
+    end
+    children = get_children(node)
+    for child in children
+        update_rule_indices!(child, n_rules, mapping)
+    end
+end
+
+"""
 	AbstractHole <: AbstractRuleNode
 
 A [`AbstractHole`](@ref) is a placeholder where certain rules from the grammar can still be applied.
@@ -86,6 +131,56 @@ mutable struct UniformHole <: AbstractUniformHole
 end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
+
+"""
+	update_rule_indices!(node::AbstractHole, n_rules::Integer)
+
+Processes and updates current node in a tree as required when grammar size changes.
+For `AbstractHole` instances, this function resizes the domain by adding zeros.
+Recursively processes all children.
+
+# Arguments
+- `node`: The current `AbstractHole` being processed
+- `n_rules`: The new number of rules in the grammar
+"""
+function update_rule_indices!(node::AbstractHole, n_rules::Integer)
+    append!(node.domain, falses(n_rules - length(node.domain)))
+    children = get_children(node)
+    for child in children
+        update_rule_indices!(child, n_rules)
+    end
+end
+
+"""
+	update_rule_indices!(node::AbstractHole, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
+
+Processes and updates current node in a tree as required when grammar size changes.
+For `AbstractHole` instances, this function updates both the size of the bitvector and the grammar rule indices based on `mapping`.
+Recursively processes all children.
+
+# Arguments
+- `node`: The current `AbstractHole` being processed
+- `n_rules`: The new number of rules in the grammar
+- `mapping`: A dictionary mapping the old rule indices to new ones
+"""
+function update_rule_indices!(node::AbstractHole,
+        n_rules::Integer,
+        mapping::AbstractDict{<:Integer, <:Integer}
+)
+    update_rule_indices!(node, n_rules) # resize
+    # update domain BV according to mapping
+    rule_indices = findall(node.domain)
+    for i in rule_indices
+        if haskey(mapping, i)
+            node.domain[i] = 0 # set old index to false
+            node.domain[mapping[i]] = 1 # set new index to true
+        end
+    end
+    children = get_children(node)
+    for child in children # TODO: do properly
+        update_rule_indices!(child, n_rules, mapping)
+    end
+end
 
 """
 	Hole <: AbstractHole
@@ -290,7 +385,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
@@ -661,100 +756,4 @@ function have_same_shape(node1, node2)
         end
     end
     return true
-end
-
-"""
-	update_rule_indices!(node::RuleNode, n_rules::Integer)
-
-Processes and updates current node in a tree as required when grammar size changes.
-For `RuleNode` instances, this function only passes through to children.
-Recursively processes all child nodes of the tree.
-
-# Arguments
-- `node`: The current `RuleNode` being processed
-- `n_rules`: The new number of rules in the grammar
-"""
-function update_rule_indices!(node::RuleNode, n_rules::Integer)
-    children = get_children(node)
-    for child in children
-        update_rule_indices!(child, n_rules)
-    end
-end
-
-"""
-	update_rule_indices!(node::AbstractHole, n_rules::Integer)
-
-Processes and updates current node in a tree as required when grammar size changes.
-For `AbstractHole` instances, this function resizes the domain by adding zeros.
-Recursively processes all child nodes of the tree.
-
-# Arguments
-- `node`: The current `AbstractHole` being processed
-- `n_rules`: The new number of rules in the grammar
-"""
-function update_rule_indices!(node::AbstractHole, n_rules::Integer)
-    resize!(node.domain, n_rules) # TODO: (docs) Resize a to contain n elements. If n is larger, the new elements are not guaranteed to be initialized.
-    children = get_children(node)
-    for child in children
-        update_rule_indices!(child, n_rules)
-    end
-end
-
-"""
-	update_rule_indices!(node::RuleNode, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
-
-Processes and updates current node in a tree as required when grammar size changes.
-For `RuleNode` instances, this function only remaps the rule indices.
-Recursively processes all child nodes of the tree.
-
-# Arguments
-- `node`: The current `RuleNode` being processed
-- `n_rules`: The new number of rules in the grammar
-- `mapping`: Dictionary mapping old rule indices to new rule indices
-"""
-function update_rule_indices!(
-        node::RuleNode,
-        n_rules::Integer,
-        mapping::AbstractDict{<:Integer, <:Integer}
-)
-    rule_ind = get_rule(node)
-    if haskey(mapping, rule_ind)
-        node.ind = mapping[rule_ind]
-    end
-    children = get_children(node)
-    for child in children
-        update_rule_indices!(child, n_rules, mapping)
-    end
-end
-
-"""
-	update_rule_indices!(node::AbstractHole, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
-
-Processes and updates current node in a tree as required when grammar size changes.
-For `AbstractHole` instances, this function....
-Recursively processes all child nodes of the tree.
-
-# Arguments
-- `node`: The current `AbstractHole` being processed
-- `n_rules`: The new number of rules in the grammar
-- `mapping`: Dictionary mapping old rule indices to new rule indices
-"""
-function update_rule_indices!(node::AbstractHole,
-        n_rules::Integer,
-        mapping::AbstractDict{<:Integer, <:Integer}
-)
-    rule_indices = findall(node.domain)
-    # resize domain BV to match new size of grammar
-    resize!(node.domain, n_rules) # TODO: is resize! the right function?
-    # update domain BV according to mapping
-    for i in rule_indices
-        if haskey(mapping, i)
-            node.domain[i] = 0 # set old index to false
-            node.domain[mapping[i]] = 1 # set new index to true
-        end
-    end
-    children = get_children(node)
-    for child in children
-        update_rule_indices!(child, n_rules, mapping)
-    end
 end

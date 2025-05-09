@@ -445,40 +445,47 @@
     end
 
     @testset "update rule indices" verbose=true begin
-        @testset "resizing only, no mapping" verbose=true begin
+        @testset "RuleNode" verbose=true begin
             @testset "RuleNode" begin
                 node = @rulenode 1{4{5, 6{3, 2, 1}}}
                 expected_node = @rulenode 1{4{5, 6{3, 2, 1}}}
                 n_rules = 10 # doesn't do anything in this case
                 update_rule_indices!(node, n_rules)
                 @test node == expected_node
-            end
-            @testset "AbstractHole" begin
-                node = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
-                n_rules = 6
-                expected_node = @rulenode UniformHole[1, 1, 0, 0, 0, 0]{2, 3}
-                update_rule_indices!(node, n_rules)
-                @test node.domain == expected_node.domain
-            end
-            # TODO: reduce domain?
-        end
-        @testset "resizing and remapping rules" verbose=true begin
-            @testset "RuleNode" begin
-                node = @rulenode 1{4{5, 6{3, 2, 1}}}
+                # with mapping
                 mapping = Dict(1 => 7)
                 expected_node = @rulenode 7{4{5, 6{3, 2, 7}}}
                 n_rules = 10 # doesn't do anything in this case
                 update_rule_indices!(node, n_rules, mapping)
                 @test node == expected_node
             end
-            @testset "AbstractHole" begin
+        end
+        @testset "AbstractHole" verbose=true begin
+            n_rules = 6
+            mapping = Dict(1 => 5, 2 => 6, 3 => 1)
+            @testset "UniformHole" begin
                 node = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
-                mapping = Dict(1 => 5, 2 => 6, 3 => 1)
+                expected_node = @rulenode UniformHole[1, 1, 0, 0, 0, 0]{2, 3}
+                update_rule_indices!(node, n_rules)
+                @test node.domain == expected_node.domain
+                # with mapping
                 n_rules = 6
+                node = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
                 expected_node = @rulenode UniformHole[0, 0, 0, 0, 1, 1]{6, 1}
                 update_rule_indices!(node, n_rules, mapping)
                 @test node.domain == expected_node.domain
                 @test node.children == expected_node.children
+            end
+            @testset "Hole" begin
+                node = @rulenode Hole[1, 1, 0, 0]
+                expected_node = @rulenode Hole[1, 1, 0, 0, 0, 0]
+                update_rule_indices!(node, n_rules)
+                @test node.domain == expected_node.domain
+                # with mapping
+                expected_node = @rulenode Hole[0, 0, 0, 0, 1, 1]
+                node = @rulenode Hole[1, 1, 0, 0, 0, 0]
+                update_rule_indices!(node, n_rules, mapping)
+                @test node.domain == expected_node.domain
             end
             @testset "error" begin
                 struct TestNodeWithoutImpl <: AbstractRuleNode end
@@ -489,7 +496,6 @@
                 @test_throws ErrorException update_rule_indices!(
                     test_node, n_rules, mapping)
             end
-            # TODO: reduce domain??
         end
     end
 end
