@@ -385,7 +385,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
