@@ -133,9 +133,7 @@ UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 """
 	update_rule_indices!(node::AbstractHole, n_rules::Integer)
 
-Processes and updates current node in a tree as required when grammar size changes.
-For `AbstractHole` instances, this function resizes the domain by adding zeros.
-Recursively processes all children.
+Resize the domains of `hole` and its children when the size of a grammar changes to `n_rules`.
 
 # Arguments
 - `node`: The current `AbstractHole` being processed
