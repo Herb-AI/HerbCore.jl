@@ -78,9 +78,7 @@ end
 """
 	update_rule_indices!(node::RuleNode, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
 
-Processes and updates current node in a tree as required when grammar size changes.
-For `RuleNode` instances, this function only remaps the rule indices.
-Recursively processes all child nodes of the tree.
+Remap the rule indices of `node` and its children according to the provided `mapping`.
 
 # Arguments
 - `node`: The current `RuleNode` being processed
