@@ -152,9 +152,8 @@ end
 """
 	update_rule_indices!(node::AbstractHole, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
 
-Processes and updates current node in a tree as required when grammar size changes.
-For `AbstractHole` instances, this function updates both the size of the bitvector and the grammar rule indices based on `mapping`.
-Recursively processes all children.
+Updates the domains of `hole` and its children according to `mapping` when grammar size changes.
+For `AbstractHole`s, this updates both the size of the domain `BitVector` and the grammar rule indices based on `mapping`.
 
 # Arguments
 - `node`: The current `AbstractHole` being processed
