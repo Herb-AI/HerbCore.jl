@@ -487,15 +487,6 @@
                 update_rule_indices!(node, n_rules, mapping)
                 @test node.domain == expected_node.domain
             end
-            @testset "error" begin
-                struct TestNodeWithoutImpl <: AbstractRuleNode end
-                n_rules = 5
-                test_node = TestNodeWithoutImpl()
-                @test_throws ErrorException update_rule_indices!(test_node, n_rules)
-                mapping = Dict(1 => 5, 2 => 6, 3 => 1)
-                @test_throws ErrorException update_rule_indices!(
-                    test_node, n_rules, mapping)
-            end
         end
     end
 end

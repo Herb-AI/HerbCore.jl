@@ -23,20 +23,6 @@ abstract type AbstractRuleNode end
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 
-# Interface for update_rule_indices!
-function update_rule_indices!(node::AbstractRuleNode,
-        n_rules::Integer
-)
-    error("update_rule_indices! not implemented for node type $(typeof(node))")
-end
-
-function update_rule_indices!(node::AbstractRuleNode,
-        n_rules::Integer,
-        mapping::AbstractDict{<:Integer, <:Integer}
-)
-    error("update_rule_indices! not implemented for node type $(typeof(node))")
-end
-
 """
 	RuleNode <: AbstractRuleNode
 
@@ -140,7 +126,9 @@ Resize the domains of `hole` and its children when the size of a grammar changes
 - `n_rules`: The new number of rules in the grammar
 """
 function update_rule_indices!(node::AbstractHole, n_rules::Integer)
-    append!(node.domain, falses(n_rules - length(node.domain)))
+    if n_rules > length(node.domain)
+        append!(node.domain, falses(n_rules - length(node.domain)))
+    end
     children = get_children(node)
     for child in children
         update_rule_indices!(child, n_rules)
@@ -380,7 +368,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
