@@ -53,6 +53,9 @@ No update on `node` required. Passes directly through to children.
 - `n_rules`: The new number of rules in the grammar
 """
 function update_rule_indices!(node::RuleNode, n_rules::Integer)
+    if get_rule(node) > n_rules
+        error("Rule index $(get_rule(node)) exceeds the number of grammar rules ($n_rules).")
+    end
     children = get_children(node)
     for child in children
         update_rule_indices!(child, n_rules)
@@ -75,6 +78,9 @@ function update_rule_indices!(
         mapping::AbstractDict{<:Integer, <:Integer}
 )
     rule_ind = get_rule(node)
+    if rule_ind > n_rules
+        error("Rule index $(rule_ind) exceeds the number of grammar rules ($n_rules).")
+    end
     if haskey(mapping, rule_ind)
         node.ind = mapping[rule_ind]
     end
@@ -124,9 +130,10 @@ Resize the domains of `hole` and its children.
 - `n_rules`: The new number of rules in the grammar
 """
 function update_rule_indices!(hole::AbstractHole, n_rules::Integer)
-    if n_rules > length(hole.domain)
-        append!(hole.domain, falses(n_rules - length(hole.domain)))
+    if n_rules < length(hole.domain)
+        error("Domain size $(length(hole.domain)) exceeds the number of grammar rules $(n_rules).")
     end
+    append!(hole.domain, falses(n_rules - length(hole.domain)))
     children = get_children(hole)
     for child in children
         update_rule_indices!(child, n_rules)
@@ -148,7 +155,7 @@ function update_rule_indices!(hole::AbstractHole,
         n_rules::Integer,
         mapping::AbstractDict{<:Integer, <:Integer}
 )
-    update_rule_indices!(hole, n_rules) # resize
+    update_rule_indices!(hole, n_rules) # resize (also checks n_rules)
     # update domain BV according to mapping
     rule_indices = findall(hole.domain)
     for i in rule_indices

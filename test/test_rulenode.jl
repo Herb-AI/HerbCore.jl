@@ -458,34 +458,48 @@
                 n_rules = 10 # doesn't do anything in this case
                 update_rule_indices!(node, n_rules, mapping)
                 @test node == expected_node
+
+                # error
+                n_rules = 3
+                @test_throws ErrorException update_rule_indices!(node, n_rules)
+                @test_throws ErrorException update_rule_indices!(node, n_rules, mapping)
             end
         end
         @testset "AbstractHole" verbose=true begin
-            n_rules = 6
             mapping = Dict(1 => 5, 2 => 6, 3 => 1)
             @testset "UniformHole" begin
-                node = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
-                expected_node = @rulenode UniformHole[1, 1, 0, 0, 0, 0]{2, 3}
-                update_rule_indices!(node, n_rules)
-                @test node.domain == expected_node.domain
-                # with mapping
                 n_rules = 6
-                node = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
-                expected_node = @rulenode UniformHole[0, 0, 0, 0, 1, 1]{6, 1}
-                update_rule_indices!(node, n_rules, mapping)
-                @test node.domain == expected_node.domain
-                @test node.children == expected_node.children
+                uniform_hole = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
+                expected_node = @rulenode UniformHole[1, 1, 0, 0, 0, 0]{2, 3}
+                update_rule_indices!(uniform_hole, n_rules)
+                @test uniform_hole.domain == expected_node.domain
+                # with mapping
+                uniform_hole = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
+                expected_uniform_hole = @rulenode UniformHole[0, 0, 0, 0, 1, 1]{6, 1}
+                update_rule_indices!(uniform_hole, n_rules, mapping)
+                @test uniform_hole.domain == expected_uniform_hole.domain
+                @test uniform_hole.children == expected_uniform_hole.children
+                # error
+                n_rules = 2
+                @test_throws ErrorException update_rule_indices!(uniform_hole, n_rules)
+                @test_throws ErrorException update_rule_indices!(
+                    uniform_hole, n_rules, mapping)
             end
             @testset "Hole" begin
-                node = @rulenode Hole[1, 1, 0, 0]
-                expected_node = @rulenode Hole[1, 1, 0, 0, 0, 0]
-                update_rule_indices!(node, n_rules)
-                @test node.domain == expected_node.domain
+                n_rules = 6
+                hole = @rulenode Hole[1, 1, 0, 0]
+                expected_hole = @rulenode Hole[1, 1, 0, 0, 0, 0]
+                update_rule_indices!(hole, n_rules)
+                @test hole.domain == expected_hole.domain
                 # with mapping
-                expected_node = @rulenode Hole[0, 0, 0, 0, 1, 1]
-                node = @rulenode Hole[1, 1, 0, 0, 0, 0]
-                update_rule_indices!(node, n_rules, mapping)
-                @test node.domain == expected_node.domain
+                expected_hole = @rulenode Hole[0, 0, 0, 0, 1, 1]
+                hole = @rulenode Hole[1, 1, 0, 0, 0, 0]
+                update_rule_indices!(hole, n_rules, mapping)
+                @test hole.domain == expected_hole.domain
+                # error
+                n_rules = 2
+                @test_throws ErrorException update_rule_indices!(hole, n_rules)
+                @test_throws ErrorException update_rule_indices!(hole, n_rules, mapping)
             end
         end
     end
