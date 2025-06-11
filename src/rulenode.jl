@@ -123,7 +123,7 @@ UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 """
 	update_rule_indices!(node::AbstractHole, n_rules::Integer)
 
-Resize the domains of `hole` and its children. Errors if the domain size exceeds new `n_rules`.
+Resize the domains of `hole` and its children. Errors if the length of the domain vector exceeds new `n_rules`.
 
 # Arguments
 - `hole`: The current `AbstractHole` being processed
@@ -131,7 +131,7 @@ Resize the domains of `hole` and its children. Errors if the domain size exceeds
 """
 function update_rule_indices!(hole::AbstractHole, n_rules::Integer)
     if n_rules < length(hole.domain)
-        error("Domain size $(length(hole.domain)) exceeds the number of grammar rules $(n_rules).")
+        error("Length domain vector $(length(hole.domain)) exceeds the number of grammar rules $(n_rules).")
     end
     append!(hole.domain, falses(n_rules - length(hole.domain)))
     children = get_children(hole)
@@ -145,7 +145,7 @@ end
 
 Updates the domains of `hole` and its children according to `mapping`.
 For `AbstractHole`s, this updates both the size of the domain `BitVector` and the rule indices. 
-Errors if the domain size exceeds new `n_rules`.
+Errors if the length of the domain vector exceeds new `n_rules`.
 
 # Arguments
 - `hole`: The current `AbstractHole` being processed
