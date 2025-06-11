@@ -46,7 +46,7 @@ end
 """
 	update_rule_indices!(node::RuleNode, n_rules::Integer)
 
-No update on `node` required. Passes directly through to children.
+Updates the `node` as required when grammar size changes. Errors if the rule index exceeds new `n_rules`.
 
 # Arguments
 - `node`: The current `RuleNode` being processed
@@ -65,7 +65,7 @@ end
 """
 	update_rule_indices!(node::RuleNode, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
 
-Remap the rule indices of `node` and its children according to the provided `mapping`.
+Remap the rule indices of `node` and its children according to the provided `mapping`. Errors if the rule index exceeds new `n_rules`.
 
 # Arguments
 - `node`: The current `RuleNode` being processed
@@ -123,7 +123,7 @@ UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 """
 	update_rule_indices!(node::AbstractHole, n_rules::Integer)
 
-Resize the domains of `hole` and its children.
+Resize the domains of `hole` and its children. Errors if the domain size exceeds new `n_rules`.
 
 # Arguments
 - `hole`: The current `AbstractHole` being processed
@@ -144,7 +144,8 @@ end
 	update_rule_indices!(hole::AbstractHole, n_rules::Integer, mapping::AbstractDict{<:Integer, <:Integer})
 
 Updates the domains of `hole` and its children according to `mapping`.
-For `AbstractHole`s, this updates both the size of the domain `BitVector` and the rule indices.
+For `AbstractHole`s, this updates both the size of the domain `BitVector` and the rule indices. 
+Errors if the domain size exceeds new `n_rules`.
 
 # Arguments
 - `hole`: The current `AbstractHole` being processed
