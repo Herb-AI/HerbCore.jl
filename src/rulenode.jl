@@ -374,7 +374,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
@@ -590,28 +590,24 @@ end
 rulesonleft(h::AbstractHole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 """
-	get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
+	get_node_at_location(root::AbstractRuleNode, location::AbstractVector{<:Integer})
 
 Retrieves a [`RuleNode`](@ref) at the given location by reference.
 """
-function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
-    if location == []
-        return root
-    else
-        return get_node_at_location(root.children[location[1]], location[2:end])
-    end
+function get_node_at_location(root::AbstractRuleNode, location::AbstractVector{<:Integer})
+    return getdescendant(root, location)
 end
 
 """
-	get_node_at_location(root::Hole, location::Vector{Int})
+	get_node_at_location(root::Hole, location::AbstractVector{<:Integer})
 
 Retrieves the current hole, if location is this very hole. Throws error otherwise.
 """
-function get_node_at_location(root::Hole, location::Vector{Int})
-    if location == []
+function get_node_at_location(root::Hole, location::AbstractVector{<:Integer})
+    if isempty(location)
         return root
     end
-    error("Node at the specified location not found.")
+    error("Node at the specified location ($location) not found.")
 end
 
 """
