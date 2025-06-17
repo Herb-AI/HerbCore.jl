@@ -51,10 +51,10 @@
 
         @testset "Node depth from a tree" begin
             #=    1      -- depth 1
-               2  3  4   -- depth 2
-                    5  6 -- depth 3
+            			   2  3  4   -- depth 2
+            					5  6 -- depth 3
 
-            =#
+            			=#
             rulenode = @rulenode 1{2, 3, 4{5, 6}}
 
             @test node_depth(rulenode, rulenode) == 1
@@ -72,11 +72,11 @@
 
         @testset "rulesoftype" begin
             #=    1
-               2  3  4
-                    5  6
-                   7    9
-                          10
-            =#
+            			   2  3  4
+            					5  6
+            				   7    9
+            						  10
+            			=#
             rulenode = @rulenode 1{2, 3, 4{5{7}, 6{9{10}}}}
             ruleset = Set((1, 3, 7, 9, 10, 15, 23))
             expected = Set((1, 3, 7, 9, 10))
@@ -104,11 +104,11 @@
         @testset "rule sequence" begin
 
             #=    1      
-               2  3  4   
-                    5  6 
-                   7    9
-                          10 
-            =#
+            			   2  3  4   
+            					5  6 
+            				   7    9
+            						  10 
+            			=#
             rulenode = @rulenode 1{2, 3, 4{5{7}, 6{9{10}}}}
 
             @test get_rulesequence(rulenode, [3, 1, 1]) == [1, 4, 5, 7]
@@ -173,11 +173,13 @@
             @test number_of_holes(UniformHole(domain, [RuleNode(1), RuleNode(1)])) == 1
             @test number_of_holes(UniformHole(domain, [Hole(domain), RuleNode(1)])) == 2
             @test number_of_holes(RuleNode(2, [Hole(domain), RuleNode(1)])) == 1
-            @test number_of_holes(UniformHole(domain,
+            @test number_of_holes(
+                UniformHole(domain,
                 [
                     Hole(domain),
                     UniformHole(domain, [Hole(domain), RuleNode(1)])
-                ])) == 4
+                ]),
+            ) == 4
         end
 
         @testset "isuniform" begin
@@ -277,11 +279,11 @@
         end
         @testset "rulesonleft" begin
             #=      1
-                /   |   \
-                2    3    4
-                    / \   / \
-                    5  6  7  8    
-            =#
+            				/   |   \
+            				2    3    4
+            					/ \   / \
+            					5  6  7  8    
+            			=#
             node = @rulenode 1{2, 3{5, 6}, 4{7, 8}}
             @test rulesonleft(node, Vector{Int}()) ==
                   Set{Int}([1, 2, 3, 4, 5, 6, 7, 8])
@@ -439,6 +441,66 @@
         @testset "Non-existent hole type" begin
             check = startswith("ArgumentError: Input to the @rulenode macro appears to be a hole")
             @test_throws check @macroexpand @rulenode HolyHole[1, 0, 0, 0]
+        end
+    end
+
+    @testset "update rule indices" verbose=true begin
+        @testset "RuleNode" verbose=true begin
+            @testset "RuleNode" begin
+                node = @rulenode 1{4{5, 6{3, 2, 1}}}
+                expected_node = @rulenode 1{4{5, 6{3, 2, 1}}}
+                n_rules = 10 # doesn't do anything in this case
+                update_rule_indices!(node, n_rules)
+                @test node == expected_node
+                # with mapping
+                mapping = Dict(1 => 7)
+                expected_node = @rulenode 7{4{5, 6{3, 2, 7}}}
+                n_rules = 10 # doesn't do anything in this case
+                update_rule_indices!(node, n_rules, mapping)
+                @test node == expected_node
+
+                # error
+                n_rules = 3
+                @test_throws ErrorException update_rule_indices!(node, n_rules)
+                @test_throws ErrorException update_rule_indices!(node, n_rules, mapping)
+            end
+        end
+        @testset "AbstractHole" verbose=true begin
+            mapping = Dict(1 => 5, 2 => 6, 3 => 1)
+            @testset "UniformHole" begin
+                n_rules = 6
+                uniform_hole = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
+                expected_node = @rulenode UniformHole[1, 1, 0, 0, 0, 0]{2, 3}
+                update_rule_indices!(uniform_hole, n_rules)
+                @test uniform_hole.domain == expected_node.domain
+                # with mapping
+                uniform_hole = @rulenode UniformHole[1, 1, 0, 0]{2, 3}
+                expected_uniform_hole = @rulenode UniformHole[0, 0, 0, 0, 1, 1]{6, 1}
+                update_rule_indices!(uniform_hole, n_rules, mapping)
+                @test uniform_hole.domain == expected_uniform_hole.domain
+                @test uniform_hole.children == expected_uniform_hole.children
+                # error
+                n_rules = 2
+                @test_throws ErrorException update_rule_indices!(uniform_hole, n_rules)
+                @test_throws ErrorException update_rule_indices!(
+                    uniform_hole, n_rules, mapping)
+            end
+            @testset "Hole" begin
+                n_rules = 6
+                hole = @rulenode Hole[1, 1, 0, 0]
+                expected_hole = @rulenode Hole[1, 1, 0, 0, 0, 0]
+                update_rule_indices!(hole, n_rules)
+                @test hole.domain == expected_hole.domain
+                # with mapping
+                expected_hole = @rulenode Hole[0, 0, 0, 0, 1, 1]
+                hole = @rulenode Hole[1, 1, 0, 0, 0, 0]
+                update_rule_indices!(hole, n_rules, mapping)
+                @test hole.domain == expected_hole.domain
+                # error
+                n_rules = 2
+                @test_throws ErrorException update_rule_indices!(hole, n_rules)
+                @test_throws ErrorException update_rule_indices!(hole, n_rules, mapping)
+            end
         end
     end
 end

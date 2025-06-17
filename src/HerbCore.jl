@@ -5,6 +5,7 @@ using AbstractTrees
 include("grammar.jl")
 include("rulenode.jl")
 include("constraint.jl")
+include("indexing.jl")
 
 export
        AbstractRuleNode,
@@ -33,6 +34,7 @@ export
        hasdynamicvalue,
        have_same_shape, AbstractConstraint,
        AbstractGrammar,
-       print_tree
+       print_tree,
+       update_rule_indices!
 
 end # module HerbCore
