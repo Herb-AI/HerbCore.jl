@@ -90,6 +90,14 @@ function update_rule_indices!(
     end
 end
 
+# TODO: docstring
+function is_domain_valid(node::RuleNode, n_rules::Integer)
+    if get_rule(node) > n_rules
+        return false
+    end
+    all(child -> is_domain_valid(child, n_rules), get_children(node))
+end
+
 """
 	AbstractHole <: AbstractRuleNode
 
@@ -119,6 +127,15 @@ mutable struct UniformHole <: AbstractUniformHole
 end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
+
+# TODO: docstring
+"""Returns whether the `hole` and its children ...."""
+function is_domain_valid(hole::AbstractHole, n_rules::Integer)
+    if length(hole.domain) != n_rules
+        return false
+    end
+    all(child -> is_domain_valid(child, n_rules), get_children(hole))
+end
 
 """
 	update_rule_indices!(node::AbstractHole, n_rules::Integer)
@@ -374,7 +391,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
