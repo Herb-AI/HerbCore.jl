@@ -90,7 +90,7 @@ function update_rule_indices!(
     end
 end
 
-# TODO: docstring
+"""Checks whether the rule index exceeds the number of rules `n_rules.`"""
 function is_domain_valid(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
         return false
@@ -128,8 +128,7 @@ end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 
-# TODO: docstring
-"""Returns whether the `hole` and its children ...."""
+"""Check if hole's domain length matches `n_rules`."""
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
     if length(hole.domain) != n_rules
         return false

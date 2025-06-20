@@ -6,8 +6,9 @@ Updates the rule indices of the given rule node, hole or grammar constraint when
 function update_rule_indices! end
 
 """
-    is_domain_valid(...)
+    is_domain_valid
 
-Returns whether or not the domain of the given rule node, hole or grammar constraint is valid wrt `grammar``.
+Check if the domain for the given object (rule node, hole or constraint) is valid wrt the provided grammar or number of rules.
+For objects `<:AbstractRuleNode`, it checks if all children are valid.
 """
 function is_domain_valid end
