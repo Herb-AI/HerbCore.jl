@@ -93,7 +93,7 @@ end
 """
     is_domain_valid(node::RuleNode, n_rules::Integer)
 
-Checks whether the rule index exceeds the number of rules `n_rules.`
+Check whether the `node`'s rule index exceeds the number of rules `n_rules.`
 """
 function is_domain_valid(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
