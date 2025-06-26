@@ -135,7 +135,7 @@ UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 """
     is_domain_valid(hole::AbstractHole, n_rules::Integer)
 
-Check if hole's domain length matches `n_rules`.
+Check if `hole`'s domain length matches `n_rules`.
 """
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
     if length(hole.domain) != n_rules
