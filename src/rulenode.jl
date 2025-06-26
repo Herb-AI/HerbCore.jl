@@ -90,7 +90,11 @@ function update_rule_indices!(
     end
 end
 
-"""Checks whether the rule index exceeds the number of rules `n_rules.`"""
+"""
+    is_domain_valid(node::RuleNode, n_rules::Integer)
+
+Checks whether the rule index exceeds the number of rules `n_rules.`
+"""
 function is_domain_valid(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
         return false
@@ -128,7 +132,11 @@ end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 
-"""Check if hole's domain length matches `n_rules`."""
+"""
+    is_domain_valid(hole::AbstractHole, n_rules::Integer)
+
+Check if hole's domain length matches `n_rules`.
+"""
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
     if length(hole.domain) != n_rules
         return false
@@ -390,7 +398,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int

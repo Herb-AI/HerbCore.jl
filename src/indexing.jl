@@ -9,9 +9,6 @@ function update_rule_indices! end
     is_domain_valid(x, n_rules::Integer)
     is_domain_valid(x, grammar::AbstractGrammar)
 
-        is_domain_valid(x, grammar::AbstractGrammar)
-        is_domain_valid(x, n_rules::Integer)
-
 Check if the domain for the given object `x` (ex: [`RuleNode`](@ref),
 [`Hole`](@ref) or [`AbstractConstraint`](@ref)) is valid given the provided
 grammar or number of rules.
