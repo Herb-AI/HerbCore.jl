@@ -91,6 +91,18 @@ function update_rule_indices!(
 end
 
 """
+    is_domain_valid(node::RuleNode, n_rules::Integer)
+
+Check whether the `node`'s rule index exceeds the number of rules `n_rules.`
+"""
+function is_domain_valid(node::RuleNode, n_rules::Integer)
+    if get_rule(node) > n_rules
+        return false
+    end
+    all(child -> is_domain_valid(child, n_rules), get_children(node))
+end
+
+"""
 	AbstractHole <: AbstractRuleNode
 
 A [`AbstractHole`](@ref) is a placeholder where certain rules from the grammar can still be applied.
@@ -119,6 +131,18 @@ mutable struct UniformHole <: AbstractUniformHole
 end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
+
+"""
+    is_domain_valid(hole::AbstractHole, n_rules::Integer)
+
+Check if `hole`'s domain length matches `n_rules`.
+"""
+function is_domain_valid(hole::AbstractHole, n_rules::Integer)
+    if length(hole.domain) != n_rules
+        return false
+    end
+    all(child -> is_domain_valid(child, n_rules), get_children(hole))
+end
 
 """
 	update_rule_indices!(node::AbstractHole, n_rules::Integer)

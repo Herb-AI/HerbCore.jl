@@ -503,4 +503,14 @@
             end
         end
     end
+    @testset "is_domain_valid" begin
+        node = @rulenode 1{2, 3, 4{5{7}, 6{9{10}}}}
+        n_rules = 10
+        @test is_domain_valid(node, n_rules) == true
+        @test is_domain_valid(node, 9) == false
+
+        hole = UniformHole(BitVector((1, 1, 0, 0)), [RuleNode(3), RuleNode(4)])
+        @test is_domain_valid(hole, 9) == false
+        @test is_domain_valid(hole, 4) == true
+    end
 end
