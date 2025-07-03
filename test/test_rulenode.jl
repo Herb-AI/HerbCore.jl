@@ -513,4 +513,58 @@
         @test is_domain_valid(hole, 9) == false
         @test is_domain_valid(hole, 4) == true
     end
+
+    @testset "issame" begin
+        # RuleNode
+        node1 = @rulenode 1{4{5, 6}, 1{2, 3}}
+        node2 = @rulenode 1{4{5, 6}, 1{2, 3}}
+        node3 = @rulenode 1{4{5, 5}, 1{2, 3}}
+        @test issame(node1, node2) == true
+        @test issame(node1, node3) == false
+        # Hole
+        hole1 = Hole([1, 1, 0, 1])
+        hole2 = Hole([1, 1, 0, 1])
+        hole3 = Hole([1, 0, 0, 1])
+        @test issame(hole1, hole2) == true
+        @test issame(hole2, hole3) == false
+
+        # UniformHole
+        hole1 = UniformHole([0, 0, 1],
+            [
+                RuleNode(14),
+                RuleNode(2, [
+                    RuleNode(4, [
+                    RuleNode(6)
+                ])
+                ])
+            ]
+        )
+        hole2 = UniformHole([0, 0, 1],
+            [
+                RuleNode(14),
+                RuleNode(2, [
+                    RuleNode(4, [
+                    RuleNode(6)
+                ])
+                ])
+            ]
+        )
+        hole3 = UniformHole([0, 0, 1],
+            [
+                RuleNode(14),
+                RuleNode(2, [
+                    RuleNode(4, [
+                    RuleNode(66)
+                ])
+                ])
+            ]
+        )
+        hole4 = UniformHole([0, 0, 1], [RuleNode(14)])
+        hole5 = UniformHole([1, 0, 1], [RuleNode(14)])
+        @test issame(hole1, hole2) == true
+        @test issame(hole1, hole3) == false
+        @test issame(hole4, hole5) == false
+
+        # TODO: test on mix
+    end
 end

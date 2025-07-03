@@ -398,7 +398,7 @@ performed in both [`RuleNode`](@ref)s until nodes with a different index
 are found.
 """
 Base.isless(
-    rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
+rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Bool = _rulenode_compare(
     rn₁, rn₂) == -1
 
 function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::Int
@@ -769,4 +769,18 @@ function have_same_shape(node1, node2)
         end
     end
     return true
+end
+
+function issame(A::RuleNode, B::RuleNode)
+    (A.ind == B.ind) && length(A.children) == length(B.children) &&
+        all(issame(a, b) for (a, b) in zip(A.children, B.children))
+end
+
+function issame(A::Hole, B::Hole)
+    A.domain == B.domain
+end
+
+function issame(A::UniformHole, B::UniformHole)
+    A.domain == B.domain && length(A.children) == length(B.children) &&
+        all(issame(a, b) for (a, b) in zip(A.children, B.children))
 end

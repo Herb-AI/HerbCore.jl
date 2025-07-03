@@ -36,6 +36,7 @@ export
        AbstractGrammar,
        print_tree,
        update_rule_indices!,
-       is_domain_valid
+       is_domain_valid,
+       issame
 
 end # module HerbCore
