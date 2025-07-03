@@ -16,3 +16,13 @@ grammar or number of rules.
 If [`isfilled`](@ref)`(x)` and `x` has children, it checks if all children are valid.
 """
 function is_domain_valid end
+
+"""
+    issame(a, b)
+
+Returns whether the two given objects `a` and `b` (ex: [`RuleNode`](@ref),
+[`Hole`](@ref) or [`AbstractConstraint`](@ref)) are the same.
+"""
+function issame(a, b)
+    false
+end

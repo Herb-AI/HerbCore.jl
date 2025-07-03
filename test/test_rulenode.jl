@@ -529,7 +529,7 @@
         @test issame(hole2, hole3) == false
 
         # UniformHole
-        hole1 = UniformHole([0, 0, 1],
+        uhole1 = UniformHole([0, 0, 1],
             [
                 RuleNode(14),
                 RuleNode(2, [
@@ -539,7 +539,7 @@
                 ])
             ]
         )
-        hole2 = UniformHole([0, 0, 1],
+        uhole2 = UniformHole([0, 0, 1],
             [
                 RuleNode(14),
                 RuleNode(2, [
@@ -549,7 +549,7 @@
                 ])
             ]
         )
-        hole3 = UniformHole([0, 0, 1],
+        uhole3 = UniformHole([0, 0, 1],
             [
                 RuleNode(14),
                 RuleNode(2, [
@@ -559,12 +559,13 @@
                 ])
             ]
         )
-        hole4 = UniformHole([0, 0, 1], [RuleNode(14)])
-        hole5 = UniformHole([1, 0, 1], [RuleNode(14)])
-        @test issame(hole1, hole2) == true
-        @test issame(hole1, hole3) == false
-        @test issame(hole4, hole5) == false
-
-        # TODO: test on mix
+        uhole4 = UniformHole([0, 0, 1], [RuleNode(14)])
+        uhole5 = UniformHole([1, 0, 1], [RuleNode(14)])
+        @test issame(uhole1, uhole2) == true
+        @test issame(uhole1, uhole3) == false
+        @test issame(uhole4, uhole5) == false
+        # compare different types
+        @test issame(node1, uhole2) == false
+        @test issame(hole3, uhole5) == false
     end
 end
