@@ -513,4 +513,59 @@
         @test is_domain_valid(hole, 9) == false
         @test is_domain_valid(hole, 4) == true
     end
+
+    @testset "issame" begin
+        # RuleNode
+        node1 = @rulenode 1{4{5, 6}, 1{2, 3}}
+        node2 = @rulenode 1{4{5, 6}, 1{2, 3}}
+        node3 = @rulenode 1{4{5, 5}, 1{2, 3}}
+        @test issame(node1, node2) == true
+        @test issame(node1, node3) == false
+        # Hole
+        hole1 = Hole([1, 1, 0, 1])
+        hole2 = Hole([1, 1, 0, 1])
+        hole3 = Hole([1, 0, 0, 1])
+        @test issame(hole1, hole2) == true
+        @test issame(hole2, hole3) == false
+
+        # UniformHole
+        uhole1 = UniformHole([0, 0, 1],
+            [
+                RuleNode(14),
+                RuleNode(2, [
+                    RuleNode(4, [
+                    RuleNode(6)
+                ])
+                ])
+            ]
+        )
+        uhole2 = UniformHole([0, 0, 1],
+            [
+                RuleNode(14),
+                RuleNode(2, [
+                    RuleNode(4, [
+                    RuleNode(6)
+                ])
+                ])
+            ]
+        )
+        uhole3 = UniformHole([0, 0, 1],
+            [
+                RuleNode(14),
+                RuleNode(2, [
+                    RuleNode(4, [
+                    RuleNode(66)
+                ])
+                ])
+            ]
+        )
+        uhole4 = UniformHole([0, 0, 1], [RuleNode(14)])
+        uhole5 = UniformHole([1, 0, 1], [RuleNode(14)])
+        @test issame(uhole1, uhole2) == true
+        @test issame(uhole1, uhole3) == false
+        @test issame(uhole4, uhole5) == false
+        # compare different types
+        @test issame(node1, uhole2) == false
+        @test issame(hole3, uhole5) == false
+    end
 end

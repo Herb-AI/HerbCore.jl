@@ -90,11 +90,7 @@ function update_rule_indices!(
     end
 end
 
-"""
-    is_domain_valid(node::RuleNode, n_rules::Integer)
-
-Check whether the `node`'s rule index exceeds the number of rules `n_rules.`
-"""
+# Check whether the `node`'s rule index exceeds the number of rules `n_rules.`
 function is_domain_valid(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
         return false
@@ -132,11 +128,7 @@ end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 
-"""
-    is_domain_valid(hole::AbstractHole, n_rules::Integer)
-
-Check if `hole`'s domain length matches `n_rules`.
-"""
+# Check if `hole`'s domain length matches `n_rules`.
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
     if length(hole.domain) != n_rules
         return false
@@ -770,3 +762,15 @@ function have_same_shape(node1, node2)
     end
     return true
 end
+
+function issame(a::RuleNode, b::RuleNode)
+    (a.ind == b.ind) && length(a.children) == length(b.children) &&
+        all(issame(a, b) for (a, b) in zip(a.children, b.children))
+end
+
+function issame(a::UniformHole, b::UniformHole)
+    a.domain == b.domain && length(a.children) == length(b.children) &&
+        all(issame(a, b) for (a, b) in zip(a.children, b.children))
+end
+
+issame(a::Hole, b::Hole) = a.domain == b.domain
