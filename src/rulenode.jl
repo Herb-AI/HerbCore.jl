@@ -330,7 +330,7 @@ function Base.:(==)(A::RuleNode, B::RuleNode)
         all(isequal(a, b) for (a, b) in zip(A.children, B.children))
 end
 # We do not know how the holes will be expanded yet, so we cannot assume equality even if the domains are equal.
-Base.:(==)(A::AbstractHole, B::AbstractHole) = false
+Base.:(==)(A::AbstractHole, B::AbstractHole) = A.domain == B.domain
 
 Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
 Base.copy(h::Hole) = Hole(copy(h.domain))

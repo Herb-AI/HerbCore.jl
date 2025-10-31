@@ -360,8 +360,10 @@
             hole1 = Hole([1, 1, 0, 1])
             hole2 = Hole([1, 1, 0, 1])
             hole3 = hole1
-            @test hole1 != hole2
-            @test hole3 != hole1
+            hole4 = Hole([0, 0, 0, 1,])
+            @test hole1 == hole2
+            @test hole3 == hole1
+            @test hole4 != hole1
         end
     end
 
