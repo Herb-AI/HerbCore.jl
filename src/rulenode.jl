@@ -329,8 +329,14 @@ function Base.:(==)(A::RuleNode, B::RuleNode)
         length(A.children) == length(B.children) && #required because zip doesn't check lengths
         all(isequal(a, b) for (a, b) in zip(A.children, B.children))
 end
-# We do not know how the holes will be expanded yet, so we cannot assume equality even if the domains are equal.
-Base.:(==)(A::AbstractHole, B::AbstractHole) = false
+function Base.:(==)(a::UniformHole, b::UniformHole)
+    a.domain == b.domain && length(a.children) == length(b.children) &&
+        all(isequal(a, b) for (a, b) in zip(a.children, b.children))
+end
+function Base.:(==)(a::AbstractHole, b::AbstractHole)
+    a.domain == b.domain
+end
+
 
 Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
 Base.copy(h::Hole) = Hole(copy(h.domain))
@@ -762,15 +768,3 @@ function have_same_shape(node1, node2)
     end
     return true
 end
-
-function issame(a::RuleNode, b::RuleNode)
-    (a.ind == b.ind) && length(a.children) == length(b.children) &&
-        all(issame(a, b) for (a, b) in zip(a.children, b.children))
-end
-
-function issame(a::UniformHole, b::UniformHole)
-    a.domain == b.domain && length(a.children) == length(b.children) &&
-        all(issame(a, b) for (a, b) in zip(a.children, b.children))
-end
-
-issame(a::Hole, b::Hole) = a.domain == b.domain

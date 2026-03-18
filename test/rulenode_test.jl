@@ -1,4 +1,5 @@
-@testset verbose=true "T <: AbstractRuleNode" begin
+@testitem "T <: AbstractRuleNode" begin
+    using AbstractTrees: children, nodevalue, treeheight
     @testset "AbstractTrees Interface" begin
         @test nodevalue(RuleNode(1)) == 1
         @test isempty(children(RuleNode(1)))
@@ -360,8 +361,8 @@
             hole1 = Hole([1, 1, 0, 1])
             hole2 = Hole([1, 1, 0, 1])
             hole3 = hole1
-            @test hole1 != hole2
-            @test hole3 != hole1
+            @test hole1 == hole2
+            @test hole3 == hole1
         end
     end
 
@@ -514,19 +515,19 @@
         @test is_domain_valid(hole, 4) == true
     end
 
-    @testset "issame" begin
+    @testset "isequal" begin
         # RuleNode
         node1 = @rulenode 1{4{5, 6}, 1{2, 3}}
         node2 = @rulenode 1{4{5, 6}, 1{2, 3}}
         node3 = @rulenode 1{4{5, 5}, 1{2, 3}}
-        @test issame(node1, node2) == true
-        @test issame(node1, node3) == false
+        @test node1 == node2
+        @test node1 != node3
         # Hole
         hole1 = Hole([1, 1, 0, 1])
         hole2 = Hole([1, 1, 0, 1])
         hole3 = Hole([1, 0, 0, 1])
-        @test issame(hole1, hole2) == true
-        @test issame(hole2, hole3) == false
+        @test hole1 == hole2
+        @test hole2 != hole3
 
         # UniformHole
         uhole1 = UniformHole([0, 0, 1],
@@ -561,11 +562,11 @@
         )
         uhole4 = UniformHole([0, 0, 1], [RuleNode(14)])
         uhole5 = UniformHole([1, 0, 1], [RuleNode(14)])
-        @test issame(uhole1, uhole2) == true
-        @test issame(uhole1, uhole3) == false
-        @test issame(uhole4, uhole5) == false
+        @test uhole1 == uhole2
+        @test uhole1 != uhole3
+        @test uhole4 != uhole5
         # compare different types
-        @test issame(node1, uhole2) == false
-        @test issame(hole3, uhole5) == false
+        @test node1 != uhole2
+        @test hole3 != uhole5
     end
 end
