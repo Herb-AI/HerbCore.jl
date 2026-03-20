@@ -17,3 +17,16 @@ If [`isfilled`](@ref)`(x)` and `x` has children, it checks if all children are v
 """
 function is_domain_valid end
 
+"""
+    issame(a, b)
+
+!!! warning 
+
+    This function is deprecated and should not be used. Use `==` instead.
+
+"""
+function issame(a, b)
+    a == b
+end
+
+ Base.@deprecate issame(a, b) Base.:(==)(a, b)
