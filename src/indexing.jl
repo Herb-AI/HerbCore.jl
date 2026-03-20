@@ -26,7 +26,7 @@ function is_domain_valid end
 
 """
 function issame(a, b)
-    a == b
+    return a == b
 end
 
 Base.@deprecate issame Base.:(==) false
