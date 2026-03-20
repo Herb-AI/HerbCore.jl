@@ -29,4 +29,4 @@ function issame(a, b)
     a == b
 end
 
- Base.@deprecate issame(a, b) Base.:(==)(a, b)
+Base.@deprecate issame(a, b) Base.:(==)(a, b)
