@@ -333,7 +333,7 @@ function Base.:(==)(a::UniformHole, b::UniformHole)
     a.domain == b.domain && length(a.children) == length(b.children) &&
         all(isequal(a, b) for (a, b) in zip(a.children, b.children))
 end
-function Base.:(==)(a::AbstractHole, b::AbstractHole)
+function Base.:(==)(a::H, b::H) where H <: AbstractHole
     a.domain == b.domain
 end
 
