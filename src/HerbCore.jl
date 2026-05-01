@@ -29,6 +29,7 @@ export
     contains_nonuniform_hole,
     get_children,
     get_rule,
+    get_domain,
     isuniform,
     isfilled,
     hasdynamicvalue,
