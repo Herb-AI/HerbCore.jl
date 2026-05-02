@@ -1,6 +1,7 @@
 module HerbCore
 
 using AbstractTrees
+using DispatchDoctor: @stable
 
 include("grammar.jl")
 include("rulenode.jl")

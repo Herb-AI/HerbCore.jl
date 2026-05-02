@@ -130,6 +130,23 @@ end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
 
+@stable begin
+struct StableDomainRuleNode{D} <: AbstractRuleNode
+    domain::D
+    children::Vector{StableDomainRuleNode{D}}
+
+    function StableDomainRuleNode(domain::D, children=StableDomainRuleNode{D}[]) where D
+        return new{D}(domain, children)
+    end
+end
+
+get_domain(sdrn::StableDomainRuleNode) = sdrn.domain
+get_children(sdrn::StableDomainRuleNode) = sdrn.children
+AbstractTrees.nodevalue(sdrn::StableDomainRuleNode) = get_domain(sdrn)
+AbstractTrees.ChildIndexing(::Type{StableDomainRuleNode}) = AbstractTrees.IndexedChildren()
+AbstractTrees.NodeType(::Type{StableDomainRuleNode}) = AbstractTrees.HasNodeType()
+end
+
 # Check if `hole`'s domain length matches `n_rules`.
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
     if length(hole.domain) != n_rules
@@ -367,7 +384,7 @@ function Base.show(io::IO, node::RuleNode; separator = ",")
     end
 end
 
-function Base.show(io::IO, node::AbstractHole; _...)
+function Base.show(io::IO, node::AbstractHole; kwargs...)
     return print(io, "Hole[$(node.domain)]")
 end
 
