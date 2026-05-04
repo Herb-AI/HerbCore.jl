@@ -28,6 +28,33 @@ AbstractTrees.nodevalue(drn::DomainRuleNode) = get_domain(drn)
 AbstractTrees.ChildIndexing(::Type{DomainRuleNode}) = AbstractTrees.IndexedChildren()
 AbstractTrees.NodeType(::Type{DomainRuleNode}) = AbstractTrees.HasNodeType()
 
+abstract type GrammarNode end
+
+abstract type NodeProperty end
+
+abstract type Uniformity <: NodeProperty end
+struct IsUniform <: Uniform end
+struct NonUniform <: Uniform end
+
+"""
+    node_uniformity(node::GrammarNode)
+
+True iff the `node` has the same child non-terminals for its entire domain.
+"""
+isuniform_node(::GrammarNode) = nothing #TODO
+"""
+    tree_uniformity(node::GrammarNode)
+
+True iff [`isuniform_node`](@ref) is true for `node` and all of its children, recursively.
+"""
+is_uniform_tree(::GrammarNode) = nothing #TODO
+
+abstract type Terminality <: NodeProperty end
+struct Terminal <: Terminal end
+struct NonTerminal <: Terminal end
+
+isterminal(::GrammarNode) = nothing #TODO
+isnonterminal(node::GrammarNode) = !isterminal(node)
 
 macro rulenode(node_type, ex)
     _shorthand2rulenode(node_type, ex)
