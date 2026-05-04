@@ -18,12 +18,12 @@ end
 
 function make_typestable_bench()
     suite = BenchmarkGroup()
-    drn = Next.@rulenode DomainRuleNode 1{2{3}}
-    suite["PreOrderDFS traversal small"] = @benchmarkable collect(preorder) setup=(preorder=PreOrderDFS($drn)) 
-    suite["leftmost small"] = @benchmarkable heuristic_leftmost($drn, 10)
-    drn = Next.@rulenode Next.DomainRuleNode 1{2{3},4{5{6{7}}}} 
-    suite["PreOrderDFS traversal"] = @benchmarkable collect(preorder) setup=(preorder=PreOrderDFS($drn)) 
-    suite["leftmost"] = @benchmarkable heuristic_leftmost($drn, 10)
+    rn = Next.@rulenode Next.RuleNode 1{2{3}}
+    suite["PreOrderDFS traversal small"] = @benchmarkable collect(preorder) setup=(preorder=PreOrderDFS($rn)) 
+    suite["leftmost small"] = @benchmarkable heuristic_leftmost($rn, 10)
+    rn = Next.@rulenode Next.RuleNode 1{2{3},4{5{6{7}}}} 
+    suite["PreOrderDFS traversal"] = @benchmarkable collect(preorder) setup=(preorder=PreOrderDFS($rn)) 
+    suite["leftmost"] = @benchmarkable heuristic_leftmost($rn, 10)
 
     return suite
 end
@@ -31,7 +31,7 @@ end
 function make_suite()
     suite = BenchmarkGroup()
     suite["RuleNode"] = make_rulenode_bench()
-    suite["Type stable DomainRuleNode"] = make_typestable_bench()
+    suite["Next.RuleNode"] = make_typestable_bench()
 
     return suite 
 end
