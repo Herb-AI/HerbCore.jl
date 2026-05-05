@@ -141,3 +141,26 @@ end
 # AbstractTrees.nodevalue(prn::PatternRuleNode) = get_domain(prn)
 # AbstractTrees.ChildIndexing(::Type{PatternRuleNode}) = AbstractTrees.IndexedChildren()
 # AbstractTrees.NodeType(::Type{PatternRuleNode}) = AbstractTrees.HasNodeType()
+
+abstract type HoleHeuristicStyle end
+struct LeftMost <: HoleHeuristicStyle end
+struct RightMost <: HoleHeuristicStyle end
+struct Random <: HoleHeuristicStyle end
+struct SmallestDomain <: HoleHeuristicStyle end
+
+
+function hole_heuristic(::LeftMost, rulenode::AbstractRuleNode, max_depth)
+    heuristic_leftmost(rulenode, max_depth)
+end
+
+function hole_heuristic(::RightMost, rulenode::AbstractRuleNode, max_depth)
+    heuristic_rightmost(rulenode, max_depth)
+end
+
+function hole_heuristic(::Random, rulenode::AbstractRuleNode, max_depth)
+    heuristic_random(rulenode, max_depth)
+end
+
+function hole_heuristic(::SmallestDomain, rulenode::AbstractRuleNode, max_depth)
+    heuristic_smallest_domain(rulenode, max_depth)
+end
