@@ -2,17 +2,28 @@ struct RuleNode{R} <: AbstractRuleNode
     rules::R
     children::Vector{RuleNode{R}}
 
-    function RuleNode(rules::R, children=RuleNode{R}[]) where R
-        return new{R}(rules, children)
-    end
     function RuleNode{R}(rules, children=RuleNode{R}[]) where R
         return new{R}(R(rules), children)
     end
 end
+function RuleNode(rules::R, children=RuleNode{R}[]) where R
+    return RuleNode{R}(rules, children)
+end
+
 
 get_rules(rules) = rules
 get_rules(rn::RuleNode) = get_rules(rn.rules)
 HerbCore.get_children(rn::RuleNode) = rn.children
+
+function Base.iterate(rn::RuleNode, i=1)
+    if i == 1
+        return (get_rules(rn), i+1)
+    elseif i == 2
+        return (HerbCore.get_children(rn), i+1)
+    else
+        return nothing
+    end
+end
 
 AbstractTrees.children(rn::RuleNode) = rn.children
 AbstractTrees.nodevalue(rn::RuleNode) = get_rules(rn)
@@ -23,8 +34,45 @@ struct GrammarDomain{G<:AbstractGrammar,D}
     grammar::G
     rules::D
 end
-get_rules(gd::GrammarDomain) = gd.rules
+get_rules(gd::GrammarDomain) = get_rules(gd.rules)
 get_grammar(gd::GrammarDomain) = gd.grammar
+
+struct DomainLabel{D,L}
+    rules::D
+    label::L
+end
+function DomainLabel{D}(dl::DomainLabel, _::L) where {D,L}
+    return DomainLabel{D,L}(D(get_rules(dl)), get_label(dl))
+end
+function DomainLabel{D}(rules, label::L=:_) where {D,L}
+    return DomainLabel{D,L}(D(rules), label)
+end
+get_rules(ld::DomainLabel) = get_rules(ld.rules)
+get_label(ld::DomainLabel) = ld.label
+
+struct DomainCount{D}
+    rules::D
+    max::Union{Int,Nothing}
+    min::Int
+    function DomainCount{D}(rules, max=1, min=1) where D
+        if !isnothing(max) && max < min
+            error(lazy"Maximum count ($max) must be >= the minimum ($min)")
+        end
+        if min < 0
+            error(lazy"Minimum ($min) be non-negative.") 
+        end
+        return new{D}(D(rules), max, min)
+    end
+end
+function DomainCount(rules::D, max=1, min=1) where D
+    return DomainCount{D}(rules, max, min)
+end
+function DomainCount{D}(dc::DomainCount) where D
+    return DomainCount{D}(get_rules(dc), get_max(dc), get_min(dc))
+end
+get_rules(dc::DomainCount) = get_rules(dc.rules)
+get_max(dc::DomainCount) = dc.max
+get_min(dc::DomainCount) = dc.min
 
 # struct RuleNode{<:GrammarDomain}{R<:AbstractRuleNode,G<:AbstractGrammar} <: AbstractRuleNode
 #     rulenode::R
@@ -91,18 +139,40 @@ macro rulenode(node_type, ex)
     _shorthand2rulenode(node_type, ex)
 end
 
+function _shorthand2rulenode(node_type, ex::Integer)
+    return :($node_type($ex))
+end
+
 function _shorthand2rulenode(node_type, ex)::Expr
     ex = postwalk(ex) do x
         if @capture(x, domain_{children__})
-            return :($node_type($domain, [$(children...)]))
+            return :(RuleNode{$node_type}($domain, [$(children...)]))
         else
             return x
         end
     end
     ex = postwalk(ex) do x
         if @capture(x, type_(domain_, [children__]))
-            children = map(c -> iscall(c, node_type) ? c : :($node_type($c)), children)
+            children = map(c -> iscall(c, node_type) ? c : :(RuleNode{$node_type}($c)), children)
             return :($type($domain, [$(children...)])) 
+        else
+            return x
+        end
+    end
+    ex = postwalk(ex) do x
+        if @capture(x, (label_:domain_))
+            return :(DomainLabel($domain, Symbol($(string(label)))))
+        else
+            return x
+        end
+    end
+    ex = postwalk(ex) do x
+        if @capture(x, (min_ <= domain_ <= max_))
+            return :(DomainCount($domain, $max, $min))
+        elseif @capture(x, (domain_ <= max_)) 
+            return :(DomainCount($domain, $max, 0))
+        elseif @capture(x, (min_ <= domain_)) 
+            return :(DomainCount($domain, nothing, $min))
         else
             return x
         end
