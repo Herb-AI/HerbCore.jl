@@ -1,4 +1,4 @@
-struct RuleNode{R} <: AbstractRuleNode
+@auto_hash_equals struct RuleNode{R} <: AbstractRuleNode
     rules::R
     children::Vector{RuleNode{R}}
 
@@ -9,20 +9,31 @@ end
 function RuleNode(rules::R, children=RuleNode{R}[]) where R
     return RuleNode{R}(rules, children)
 end
-
+function RuleNode{R}(rn::RuleNode{R}, ::Vector{<:RuleNode}) where R
+    return RuleNode{R}(rn.rules, rn.children)
+end
 
 get_rules(rules) = rules
 get_rules(rn::RuleNode) = get_rules(rn.rules)
 HerbCore.get_children(rn::RuleNode) = rn.children
 
-function Base.iterate(rn::RuleNode, i=1)
-    if i == 1
-        return (get_rules(rn), i+1)
-    elseif i == 2
-        return (HerbCore.get_children(rn), i+1)
-    else
-        return nothing
+function Base.in(a::RuleNode, b::RuleNode)
+    if get_rules(a) in get_rules(b)
+        if allequal(length, get_children.((a,b))) && all(in.(get_children(a), get_children(b)))
+            return true
+        end
     end
+    if any(a in cb for cb in HerbCore.get_children(b))
+        return true
+    else
+        return false
+    end
+end
+
+function Base.intersect(a::R, bs...) where R<:RuleNode
+    new_rules = intersect(get_rules(a), get_rules.(bs)...)
+    new_children = [intersect(ca, cbs...) for (ca, cbs) in zip(get_children(a), get_children.(bs)) if !isempty(cbs)]
+    return R(new_rules, new_children)
 end
 
 AbstractTrees.children(rn::RuleNode) = rn.children
@@ -36,12 +47,19 @@ struct GrammarDomain{G<:AbstractGrammar,D}
 end
 get_rules(gd::GrammarDomain) = get_rules(gd.rules)
 get_grammar(gd::GrammarDomain) = gd.grammar
+get_grammar(rn::RuleNode{<:GrammarDomain}) = rn.rules.grammar
 
 struct DomainLabel{D,L}
     rules::D
     label::L
 end
-function DomainLabel{D}(dl::DomainLabel, _::L) where {D,L}
+function DomainLabel{D,L}(rules) where {D,L}
+    return DomainLabel{D,L}(D(get_rules(rules)), :_)
+end
+function DomainLabel{D,L}(dl::DomainLabel) where {D,L}
+    return DomainLabel{D,L}(D(get_rules(dl)), get_label(dl))
+end
+function DomainLabel{D}(dl::DomainLabel, _::L=:_) where {D,L}
     return DomainLabel{D,L}(D(get_rules(dl)), get_label(dl))
 end
 function DomainLabel{D}(rules, label::L=:_) where {D,L}
@@ -49,6 +67,7 @@ function DomainLabel{D}(rules, label::L=:_) where {D,L}
 end
 get_rules(ld::DomainLabel) = get_rules(ld.rules)
 get_label(ld::DomainLabel) = ld.label
+get_label(rn::RuleNode{<:DomainLabel}) = rn.rules.label
 
 struct DomainCount{D}
     rules::D
@@ -71,20 +90,10 @@ function DomainCount{D}(dc::DomainCount) where D
     return DomainCount{D}(get_rules(dc), get_max(dc), get_min(dc))
 end
 get_rules(dc::DomainCount) = get_rules(dc.rules)
-get_max(dc::DomainCount) = dc.max
+@unstable get_max(dc::DomainCount) = dc.max
 get_min(dc::DomainCount) = dc.min
-
-# struct RuleNode{<:GrammarDomain}{R<:AbstractRuleNode,G<:AbstractGrammar} <: AbstractRuleNode
-#     rulenode::R
-#     grammar::G
-#
-#     function RuleNode{<:GrammarDomain}(rulenode::R, grammar::G) where {R,G}
-#         !is_tree_valid(rulenode, grammar) || error(lazy"Rulenode ($rulenode) must be valid within the grammar ($grammar) to construct a RuleNode{<:GrammarDomain}")
-#         return new{R,G}(rulenode, grammar)
-#     end
-# end
-# get_rulenode(grn::RuleNode{<:GrammarDomain}) = grn.rulenode
-# get_grammar(grn::RuleNode{<:GrammarDomain}) = grn.grammar
+get_min(rn::RuleNode{<:DomainCount}) = rn.rules.min
+@unstable get_max(rn::RuleNode{<:DomainCount}) = rn.rules.max
 
 abstract type NodeProperty end
 
@@ -179,38 +188,6 @@ function _shorthand2rulenode(node_type, ex)::Expr
     end
     return ex
 end
-
-# struct PatternRuleNode{D} <: AbstractRuleNode
-#     domain::D
-#     children::Vector{PatternRuleNode{D}}
-#     at_most::Int
-#     at_least::Int
-#
-#     function PatternRuleNode(
-#         domain::D,
-#         children::Vector{PatternRuleNode{D}}=PatternRuleNode{D}[],
-#         at_most::Int=1,
-#         at_least::Int=0,
-#     ) where D
-#         if at_least < 0 
-#             error(lazy"The lower bound of the pattern ($count_lower_bound) must be non-negative.")
-#         elseif at_most < at_least
-#             error(lazy"The upper bound of the pattern ($count_upper_bound) must be >= the lower bound ($count_lower_bound")
-#         end
-#
-#         return new{D}(domain, children, at_most, at_least)
-#     end
-# end
-#
-# const PRN = PatternRuleNode
-#
-# HerbCore.get_domain(prn::PatternRuleNode) = prn.domain
-# HerbCore.get_children(prn::PatternRuleNode) = prn.children
-#
-# AbstractTrees.children(prn::PatternRuleNode) = prn.children
-# AbstractTrees.nodevalue(prn::PatternRuleNode) = get_domain(prn)
-# AbstractTrees.ChildIndexing(::Type{PatternRuleNode}) = AbstractTrees.IndexedChildren()
-# AbstractTrees.NodeType(::Type{PatternRuleNode}) = AbstractTrees.HasNodeType()
 
 abstract type HoleHeuristicStyle end
 struct LeftMost <: HoleHeuristicStyle end

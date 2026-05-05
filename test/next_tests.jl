@@ -14,13 +14,30 @@
 end
 
 @testitem "@rulenode" tags = [:next] begin
-    using HerbCore.Next: @rulenode, RuleNode, get_rules
+    using HerbCore.Next: @rulenode, DomainLabel, get_rules, get_label, get_min, get_max
+    using AbstractTrees: PreOrderDFS
     
-    drn_int = @rulenode RuleNode 1{2,3}
-    @test length(get_children(drn_int)) == 2
-    @test typeof(get_rules(drn_int)) == Int
+    rn_int = @rulenode Int 1{2,3}
+    @test length(get_children(rn_int)) == 2
+    @test typeof(get_rules(rn_int)) == Int
 
-    drn_bitset = @rulenode RuleNode{BitSet} 1{2,3}
-    @test typeof(get_rules(drn_bitset)) == BitSet
-    @test all(typeof.(get_rules.(get_children(drn_bitset))) .== BitSet)
+    rn_int = @rulenode Int 1{2{3}}
+    @test length(get_children(rn_int)) == 1
+    @test typeof(get_rules(rn_int)) == Int
+
+    rn_bitset = @rulenode BitSet 1{2,3}
+    @test typeof(get_rules(rn_bitset)) == BitSet
+    @test all(typeof.(get_rules.(get_children(rn_bitset))) .== BitSet)
+
+    rn_bitset_labels = @rulenode DomainLabel{BitSet,Symbol} 1{X: 2} 
+    @test typeof(get_label(rn_bitset_labels)) == Symbol
+    @test map(x -> get_label(x), PreOrderDFS(rn_bitset_labels)) == [:_, :X]
+
+    rn_bitset_count = @rulenode DomainCount{BitSet} [1,2]{2 <= [3,4] <= 4} 
+    @test get_min(first(get_children(rn_bitset_count))) == 2
+    @test get_max(first(get_children(rn_bitset_count))) == 4
+    rn_bitset_count_root = @rulenode DomainCount{BitSet} (2 <= [3,4] <= 4){} 
+    @test get_min(rn_bitset_count_root) == 2
+    @test get_max(rn_bitset_count_root) == 4
+    # @test map(x -> get_label(x), PreOrderDFS(rn_bitset_labels)) == [:_, :X]
 end
