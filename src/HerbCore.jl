@@ -6,6 +6,7 @@ include("grammar.jl")
 include("rulenode.jl")
 include("constraint.jl")
 include("indexing.jl")
+include("next.jl")
 
 export
     AbstractRuleNode,

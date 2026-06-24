@@ -1,5 +1,6 @@
 using StyledStrings: @styled_str
 using MacroTools: @capture, postwalk, prewalk, isexpr
+using StaticArrays
 
 """
 	abstract type AbstractRuleNode end
@@ -23,6 +24,7 @@ abstract type AbstractRuleNode end
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 
+
 """
 	RuleNode <: AbstractRuleNode
 
@@ -37,14 +39,52 @@ A [`RuleNode`](@ref) consists of:
 !!! compat
 	Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
-mutable struct RuleNode <: AbstractRuleNode
-    ind::Int # index in grammar
-    _val::Any  #value of _() evals
-    children::Vector{AbstractRuleNode}
+struct RuleNode{I} <: AbstractRuleNode
+    ind::I # index in grammar
+    # _val::V  #value of _() evals
+    children::Vector{RuleNode{I}}
+    # function RuleNode{I,V,C}(ind, _val, children) where {I,V,C}
+    #     return new{I, V, C}(ind, _val, children)
+    # end
 end
 
+function RuleNode(ind::Int, _val::Any=nothing, children=AbstractRuleNode[])
+    # return RuleNode{Int, Any, eltype(children)}(ind, _val, children)
+    return RuleNode{Int}(ind, children)
+end
+AbstractTrees.NodeType(::Type{<:RuleNode}) = HasNodeType()
+AbstractTrees.nodetype(::Type{<:R}) where R<:RuleNode = R
+
+# mutable struct NTupleRuleNode{R,A} <: AbstractRuleNode
+#     rules::R
+#     n::UInt8
+#     children::NTuple{A,StaticRuleNode{R,A}}
+#     function StaticRuleNode{R,A}(rules::R) where {R,A}
+#         return new{R,A}(rules, 0, MVector{A,StaticRuleNode{R,A}}(undef))
+#     end
+# end
+
+# mutable struct StaticRuleNode{R,A} <: AbstractRuleNode
+#     rules::R
+#     nchildren::UInt8
+#     children::MVector{A,StaticRuleNode{R,A}}
+#
+#     function StaticRuleNode{R,A}(rules::R) where {R,A}
+#         return new{R,A}(rules, 0, MVector{A,StaticRuleNode{R,A}}(undef))
+#     end
+#     function StaticRuleNode{R,A}(rules::R, children) where {R,A}
+#         children = resize!(children, A)
+#         return new{R,A}(rules, length(children), MVector{A}(children))
+#     end
+# end
+#
+# function get_children(sra::StaticRuleNode)
+#     return view(sra.children, 1:sra.nchildren)
+# end
+
+
 """
-	update_rule_indices!(node::RuleNode, n_rules::Integer)
+    update_rule_indices!(node::RuleNode, n_rules::Integer)
 
 Updates the `node` as required when grammar size changes. Errors if the rule index exceeds new `n_rules`.
 
@@ -212,7 +252,7 @@ struct HoleReference
     path::Vector{Int}
 end
 
-RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
+# RuleNode(ind::Int) = RuleNode(ind, nothing, AbstractRuleNode[])
 """
 	RuleNode(ind::Int, children::Vector{AbstractRuleNode})
 
@@ -327,7 +367,7 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 !!! compat
 	Evaluate immediately functionality is not yet supported by most of Herb.jl.
 """
-RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
+# RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
 
 Base.:(==)(::RuleNode, ::AbstractHole) = false
 Base.:(==)(::AbstractHole, ::RuleNode) = false
@@ -713,16 +753,18 @@ end
 contains_nonuniform_hole(hole::Hole) = true
 
 #Shared reference to an empty vector to reduce memory allocations.
-NOCHILDREN = Vector{AbstractRuleNode}()
+const NOCHILDREN = Vector{AbstractRuleNode}()
+
+using DispatchDoctor: @stable
 
 """
-	get_children(rn::AbstractRuleNode)
+    get_children(rn::AbstractRuleNode)
 
 Returns the children of the given [`AbstractRuleNode`](@ref)
 """
-get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
-get_children(::Hole)::Vector{AbstractRuleNode} = NOCHILDREN
-get_children(h::UniformHole)::Vector{AbstractRuleNode} = h.children
+@stable get_children(rn::AbstractRuleNode) = rn.children
+get_children(::Hole) = NOCHILDREN
+get_children(h::UniformHole) = h.children
 
 """
 	isuniform(rn::AbstractRuleNode)
