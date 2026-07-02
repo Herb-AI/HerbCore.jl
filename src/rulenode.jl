@@ -132,6 +132,7 @@ mutable struct UniformHole <: AbstractUniformHole
 end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
+Base.getindex(uh::UniformHole, inds...) = getindex(get_children(uh), inds...)
 
 # Check if `hole`'s domain length matches `n_rules`.
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
