@@ -144,6 +144,15 @@
                 @test get_node_at_location(hole, Vector{Int}()).domain == hole.domain #because hole != hole
                 @test_throws Exception get_node_at_location(hole, [1])
             end
+            @testset "Hole in RuleNode" begin
+                rn = RuleNode(1, [Hole([1, 1])])
+                retrieved = get_node_at_location(rn, [1])
+                @test retrieved == Hole([1, 1])
+            end
+            @testset "Deeper example" begin
+                rn = @rulenode 1{2,3{4,5{6,7}}}
+                @test get_node_at_location(rn, [2, 2, 2]) == RuleNode(7)
+            end
         end
 
         @testset "get_path" begin
