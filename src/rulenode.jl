@@ -43,6 +43,9 @@ mutable struct RuleNode <: AbstractRuleNode
     children::Vector{AbstractRuleNode}
 end
 
+Base.getindex(rn::AbstractRuleNode, inds...) = getindex(get_children(rn), inds...)
+Base.view(rn::AbstractRuleNode, inds...) = view(get_children(rn), inds...)
+
 """
 	update_rule_indices!(node::RuleNode, n_rules::Integer)
 
