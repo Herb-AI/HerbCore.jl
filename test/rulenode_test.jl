@@ -15,6 +15,13 @@
         @test rn[1:2] == [@rulenode(2), @rulenode(3{4,5})]
     end
 
+    @testset "view" begin
+        rn = @rulenode 1{2,3{4,5}}
+        @test view(rn, 1)[] == @rulenode(2)
+        @test view(rn, 2)[] == @rulenode(3{4,5})
+        @test view(rn, 1:2) == [@rulenode(2), @rulenode(3{4,5})]
+    end
+
     @testset "RuleNode tests" begin
         @testset "Equality tests" begin
             @test RuleNode(1) == RuleNode(1)
