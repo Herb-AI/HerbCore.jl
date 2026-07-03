@@ -119,7 +119,6 @@ end
         @test view(rn, 1:2) == [@rulenode(2), @rulenode(3{4,5})]
     end
 
-
     @testset "RuleNode tests" begin
         @testset "Equality tests" begin
             @test RuleNode(1) == RuleNode(1)
