@@ -336,13 +336,13 @@ RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
 Base.:(==)(::RuleNode, ::AbstractHole) = false
 Base.:(==)(::AbstractHole, ::RuleNode) = false
 function Base.:(==)(A::RuleNode, B::RuleNode)
-    return (A.ind == B.ind) &&
-        length(A.children) == length(B.children) && #required because zip doesn't check lengths
-        all(isequal(a, b) for (a, b) in zip(A.children, B.children))
+    return (A.ind == B.ind) && A.children == B.children
+        # length(A.children) == length(B.children) && #required because zip doesn't check lengths
+        # all(isequal(a, b) for (a, b) in zip(A.children, B.children))
 end
 function Base.:(==)(a::UniformHole, b::UniformHole)
-    return a.domain == b.domain && length(a.children) == length(b.children) &&
-        all(isequal(a, b) for (a, b) in zip(a.children, b.children))
+    return a.domain == b.domain && a.children == b.children ##length(a.children) == length(b.children) &&
+        # all(isequal(a, b) for (a, b) in zip(a.children, b.children))
 end
 function Base.:(==)(a::Hole, b::Hole)
     return a.domain == b.domain
