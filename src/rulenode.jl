@@ -898,9 +898,9 @@ const NOCHILDREN = Vector{AbstractRuleNode}()
 
 Returns the children of the given [`AbstractRuleNode`](@ref)
 """
-get_children(rn::AbstractRuleNode)::Vector{AbstractRuleNode} = rn.children
-get_children(::Hole)::Vector{AbstractRuleNode} = NOCHILDREN
-get_children(h::UniformHole)::Vector{AbstractRuleNode} = h.children
+get_children(rn::RuleNode) = rn.children
+get_children(::Hole) = NOCHILDREN
+get_children(h::UniformHole) = h.children
 
 """
 	isuniform(rn::AbstractRuleNode)
