@@ -732,7 +732,7 @@ end
 contains_nonuniform_hole(hole::Hole) = true
 
 #Shared reference to an empty vector to reduce memory allocations.
-NOCHILDREN = Vector{AbstractRuleNode}()
+const NOCHILDREN = Vector{AbstractRuleNode}()
 
 """
 	get_children(rn::AbstractRuleNode)
