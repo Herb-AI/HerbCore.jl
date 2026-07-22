@@ -435,7 +435,7 @@ function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::In
         throw(ArgumentError("Unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))"))
     end
     if get_rule(rn₁) == get_rule(rn₂)
-        for (c₁, c₂) in zip(rn₁.children, rn₂.children)
+        for (c₁, c₂) in zip(get_children(rn₁), get_children(rn₂))
             comparison = _rulenode_compare(c₁, c₂)
             if comparison ≠ 0
                 return comparison
