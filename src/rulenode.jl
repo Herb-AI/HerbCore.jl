@@ -348,6 +348,10 @@ Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
 Base.copy(h::Hole) = Hole(copy(h.domain))
 Base.copy(h::UniformHole) = UniformHole(copy(h.domain), h.children)
 
+Base.deepcopy(r::RuleNode) = RuleNode(r.ind, r._val, [deepcopy(c) for c in r.children])
+Base.deepcopy(h::Hole) = Hole(copy(h.domain)) # since this is a bitvector, regular copy is fine
+Base.deepcopy(h::UniformHole) = UniformHole(copy(h.domain), [deepcopy(c) for c in h.children])
+
 function Base.hash(node::RuleNode, h::UInt = zero(UInt))
     retval = hash(node.ind, h)
     for child in node.children
