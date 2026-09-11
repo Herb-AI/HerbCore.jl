@@ -348,6 +348,12 @@ Base.copy(r::RuleNode) = RuleNode(r.ind, r._val, r.children)
 Base.copy(h::Hole) = Hole(copy(h.domain))
 Base.copy(h::UniformHole) = UniformHole(copy(h.domain), h.children)
 
+# can specialize deepcopy because there are no objects within RuleNodes, Holes, and UniformHoles
+# that share memory with eachother. The default deepcopy maintains egality (===) of descendant
+# objects. Note that if you implement a new type that shares children (effectively a DAG)
+# This assumption no longer holds and a different deepcopy is needed (or just use the existing
+# definition in Base)
+
 Base.deepcopy(r::RuleNode) = RuleNode(r.ind, r._val, [deepcopy(c) for c in r.children])
 Base.deepcopy(h::Hole) = Hole(copy(h.domain)) # since this is a bitvector, regular copy is fine
 Base.deepcopy(h::UniformHole) = UniformHole(copy(h.domain), [deepcopy(c) for c in h.children])
