@@ -614,5 +614,12 @@
         # compare different types
         @test node1 != uhole2
         @test hole3 != uhole5
+
+
+        @testset "deepcopy tests" begin
+            rn = @rulenode 60{46{47{44{42{40},44{44{42{UniformHole[1,0,0,1]},43{3}},44{43{12},43{Hole[1,1,0]}}}}}}}
+            @test deepcopy(rn) == rn
+        end
     end
+
 end
