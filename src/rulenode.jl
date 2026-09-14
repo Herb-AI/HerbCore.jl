@@ -642,28 +642,25 @@ end
 rulesonleft(h::AbstractHole, loc::Vector{Int}) = Set{Int}(findall(h.domain))
 
 """
-	get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
+    get_node_at_location(root::AbstractRuleNode, location::AbstractVector{<:Integer})
 
-Retrieves a [`RuleNode`](@ref) at the given location by reference.
-"""
-function get_node_at_location(root::AbstractRuleNode, location::Vector{Int})
-    if location == []
-        return root
-    else
-        return get_node_at_location(root.children[location[1]], location[2:end])
-    end
-end
+Traverse the tree rooted at `root` via the child indices given by `location`.
 
-"""
-	get_node_at_location(root::Hole, location::Vector{Int})
+```jldoctest
+julia> rn = @rulenode 1{2{3,4},5};
 
-Retrieves the current hole, if location is this very hole. Throws error otherwise.
+julia> get_node_at_location(rn, [1, 2])
+4
+
+julia> get_node_at_location(rn, [2])
+5
+
+julia> get_node_at_location(rn, Int[])
+1{2{3,4},5}
+```
 """
-function get_node_at_location(root::Hole, location::Vector{Int})
-    if location == []
-        return root
-    end
-    error("Node at the specified location not found.")
+function get_node_at_location(root::AbstractRuleNode, location::AbstractVector{<:Integer})
+    return getdescendant(root, location)
 end
 
 """
