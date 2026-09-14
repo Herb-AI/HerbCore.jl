@@ -443,6 +443,7 @@
             @testset "Hole hash test" begin
                 node = @rulenode Hole[1, 1, 0, 0]
                 @test hash(node) == hash(node.domain)
+                @test hash(@rulenode UniformHole[1]{1}) != hash(@rulenode UniformHole[1]{2})
             end
         end
 
