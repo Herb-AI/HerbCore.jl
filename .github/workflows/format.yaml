@@ -15,11 +15,13 @@ concurrency:
 jobs:
   format:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: fredrikekre/runic-action@v1
         with:
           version: '1'
+          format_files: true
         continue-on-error: ${{ github.event_name == 'pull_request' }}
       - uses: reviewdog/action-suggester@v1
         if: github.event_name == 'pull_request'
