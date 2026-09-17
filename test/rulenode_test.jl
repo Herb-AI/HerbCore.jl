@@ -1,5 +1,5 @@
 @testitem "T <: AbstractRuleNode" begin
-    using AbstractTrees: children, nodevalue, treeheight
+    using AbstractTrees: children, nodevalue, treeheight, intree
     @testset "AbstractTrees Interface" begin
         @test nodevalue(RuleNode(1)) == 1
         @test isempty(children(RuleNode(1)))
@@ -20,6 +20,18 @@
         @test view(rn, 1)[] == @rulenode(2)
         @test view(rn, 2)[] == @rulenode(3{4,5})
         @test view(rn, 1:2) == [@rulenode(2), @rulenode(3{4,5})]
+    end
+
+    @testset "intree" begin
+        rn1 = @rulenode 3{2,Hole[0, 1, 1]}
+        rn2 = @rulenode 3{2,3}
+
+        @test intree(rn1, rn2)
+        @test intree(rn1, rn2)
+
+        rn1_no_overlap_with_rn2 = @rulenode 3{2,Hole[0, 1, 0]}
+
+        @test !intree(rn1_no_overlap_with_rn2, rn2)
     end
 
     @testset "RuleNode tests" begin
