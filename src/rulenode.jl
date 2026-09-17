@@ -1,5 +1,6 @@
 using StyledStrings: @styled_str
 using MacroTools: @capture, postwalk, prewalk, isexpr
+using AbstractTrees: PreOrderState, TreeCursor
 
 """
 	abstract type AbstractRuleNode end
@@ -19,9 +20,164 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
+Base.getindex(rn::AbstractRuleNode, inds...) = getindex(get_children(rn), inds...)
+Base.view(rn::AbstractRuleNode, inds...) = view(get_children(rn), inds...)
+
 # Interface to AbstractTrees.jl
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
+AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedChildren()
+
+# struct ZipNode{Ns<:Tuple} <: AbstractRuleNode
+#     nodes::Ns
+# end
+# ZipNode(nodes...) = ZipNode(nodes)
+# AbstractTrees.children(z::ZipNode) = ZipNode.(zip(children.(z.nodes)...))
+# function AbstractTrees.nodevalue(z::ZipNode)
+#     return nodevalue.(z.nodes)
+# end
+# Base.zip(nodes::Vararg{<:AbstractRuleNode}; strict = false) = zipnodes(nodes...; strict)
+# Base.eltype(::Type{Z}) where {Ns, Z <: ZipNode{Ns}} = fieldtypes(Ns) 
+# Base.show(io::IO, z::ZipNode) = Base.show_delim_array(io, z.nodes, "zipnodes(", ',', ')', false)
+#
+has_definite_children(::Type) = true
+
+struct ZipNode{N<:Tuple} <: AbstractRuleNode
+    nodes::N
+end
+ZipNode(nodes...) = ZipNode(nodes)
+
+"""
+    zipnodes(nodes...; strict = false)
+
+Lazily construct a zipped version of the trees rooted at `nodes`.
+
+Essentially, like `zip`, but for trees.
+
+The `AbstractTrees.nodevalue` of each node is a tuple of the node values
+of each of the `nodes`. The `AbstractTrees.children` of each node is a list of
+tuples of the children of each of the nodes. First children in the first tuple,
+second children in the second tuple, etc.
+
+`strict = true` changes the behavior of `AbstractTrees.nodevalue` so that the
+`nodevalue` becomes `missing` when the children of each of the nodes are not
+compatible. Children are compatible if they have equal lengths, ignoring the
+children of nodes that have unknown children (like [`Hole`](@ref)s).
+
+```jldoctest
+julia> rn1 = @rulenode 1{2,3};
+
+julia> rn2 = @rulenode 3;
+
+julia> zn = zipnodes(rn1, rn2; strict=false) 
+zipnodes(1{2,3}, 3; strict=false)
+
+julia> nodevalue(zn)
+missing
+```
+
+The value of the node is `missing` because `rn1` has two children while `rn2`
+has none, and both are [`RuleNode`](@ref)s which have definite children. This is in contrast to a [`Hole`](@ref), which has no children, but represents a node that *might* have children. If `rn1` above is swapped out with a [`Hole`](@ref), the nodevalue is no longer `missing`.
+
+```jldoctest
+julia> rn1 = @rulenode Hole[1, 1, 1]
+
+julia> rn2 = @rulenode 3;
+
+julia> zn = zipnodes(rn1, rn2; strict=false) 
+zipnodes(Hole[Bool[1, 1, 1]], 3; strict=false)
+
+julia> nodevalue(zn)
+(Bool[1, 1, 1], 3)
+```
+"""
+zipnodes(nodes...) = ZipNode(nodes...)
+# Base.eltype(::Type{<:ZipNode{Z}}) where Z = eltype(Z)
+Base.zip(nodes::Vararg{<:AbstractRuleNode}) = zipnodes(nodes...)
+Base.show(io::IO, z::ZipNode) = Base.show_delim_array(io, z.nodes, "zip(", ',', ')', false)
+AbstractTrees.children(z::ZipNode) = ZipNode.(zip(children.(z.nodes)...))
+
+function _children_compatible(z::ZipNode{T}) where T
+    # Holes don't have definite children, other nodes do by default
+    ch_def = has_definite_children.(fieldtypes(T))
+    ch_ls = length.(children.(z.nodes))
+    def_and_ls = zip(ch_def, ch_ls)
+    length_or_incompat = ((ch_def, ch_l),) -> ch_def ? ch_l : children_incompatible
+    
+    # All of the lengths of the children of nodes that have definite
+    # children
+    lengths_def_ch = skipincompatible(
+        Iterators.map(length_or_incompat, def_and_ls)
+    )
+    return allequal(lengths_def_ch)
+end
+
+# like missing, but with different behavior on `isdisjoint` and `issubset`
+# namely, the incompatibility propagates over set checks
+struct ChildrenIncompatible end
+const children_incompatible = ChildrenIncompatible()
+isincompatible(::Any) = false
+isincompatible(::ChildrenIncompatible) = true
+Base.isdisjoint(::T, ::T) where T<:ChildrenIncompatible = children_incompatible
+Base.issubset(::T, ::T) where T<:ChildrenIncompatible = children_incompatible
+Base.to_index(::ChildrenIncompatible) = children_incompatible
+Base.:(!)(::ChildrenIncompatible) = children_incompatible
+skipincompatible(itr) = Iterators.filter(!isincompatible, itr)
+
+function AbstractTrees.nodevalue(z::ZipNode{T}) where T
+    ch_compat = _children_compatible(z)
+    if !ch_compat
+        return ntuple(Returns(children_incompatible), length(z.nodes))
+    end
+    return Base.to_index.(nodevalue.(z.nodes))
+end
+
+function mapreduce_nodes(f, op, nodes...; kw...)
+    return mapreduce(f ∘ nodevalue, op, PreOrderDFS.(nodes)...; kw...)
+end
+function Base.mapreduce(f, op, nodes::Vararg{<:AbstractRuleNode}; kw...)
+    return mapreduce_nodes(f, op, nodes...; kw...)
+end
+
+for func in [:any, :all]
+    func_nodes = Symbol(func, :_nodes)
+
+    @eval begin
+        $func_nodes(f, rn) = $func(f ∘ nodevalue, PreOrderDFS(rn))
+        function $func_nodes(f, zn::ZipNode)
+            f1 = incompatible_to_false(splat(f)) ∘ nodevalue
+            return $func(f1, PreOrderDFS(zn))
+        end
+        Base.$func(f, rn::AbstractRuleNode) = $func_nodes(f, rn)
+
+        $func_nodes(rn) = $func_nodes(identity, rn)
+        Base.$func(rn::AbstractRuleNode) = $func_nodes(rn)
+    end
+end
+
+function incompatible_to_false(f, x)
+    v = f(x)
+    return v isa ChildrenIncompatible ? false : v
+end
+incompatible_to_false(f) = Base.Fix1(incompatible_to_false, f)
+
+function equiv_to_t(t, equiv)
+    fixed_zip = Base.Fix1(zip, t)
+    fixed_all_equiv = Base.Fix1(all, equiv)
+    return fixed_all_equiv ∘ fixed_zip 
+end
+
+function intree_rulenodes(t1, t2; equiv)
+    f = equiv_to_t(t1, equiv)
+    remapped_f = incompatible_to_false(equiv_to_t(t1, equiv))
+    dfs = PreOrderDFS(t2)
+
+    return any(remapped_f, dfs)
+end
+
+function AbstractTrees.intree(rn1::AbstractRuleNode, rn2::AbstractRuleNode; equiv = ===)
+    return intree_rulenodes(rn1, rn2; equiv)
+end
 
 """
 	RuleNode <: AbstractRuleNode
@@ -108,6 +264,8 @@ The `domain` of a [`AbstractHole`](@ref) defines which rules can be applied.
 The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
 abstract type AbstractHole <: AbstractRuleNode end
+
+AbstractTrees.nodevalue(h::AbstractHole) = h.domain
 
 """
 	Hole <: AbstractHole
@@ -201,6 +359,7 @@ end
 mutable struct Hole <: AbstractHole
     domain::BitVector
 end
+has_definite_children(::Type{<:Hole}) = false
 
 """
 	HoleReference

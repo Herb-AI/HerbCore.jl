@@ -1,3 +1,80 @@
+@testitem "minimum/maximum nodes" begin
+    rn1 = @rulenode 1{2,3}
+    @test any(==(3), rn1)
+    @test !any(==(4), rn1)
+    @test all(<=(3), rn1)
+end
+
+@testitem "any/all nodes" begin
+    rn1 = @rulenode 1{2,3}
+    @test minimum(rn1) == 1
+    @test maximum(rn1) == 3
+end
+
+@testitem "count nodes" begin
+    rn1 = @rulenode 1{2,3}
+    @test count(==(3), rn1) == 1
+    rn2 = @rulenode 1{3,3}
+    @test count(==(3), rn2) == 2
+end
+
+@testitem "sum nodes" begin
+    rn1 = @rulenode 1{2,3}
+    @test sum(rn1) == 6
+    rn2 = @rulenode 1{3,3}
+    @test sum(rn2) == 7
+end
+
+@testitem "prod nodes" begin
+    rn1 = @rulenode 1{2,3}
+    @test prod(rn1) == 6
+    rn2 = @rulenode 1{3,3}
+    @test prod(rn2) == 9
+end
+
+@testitem "intree when all !isdisjoint" begin
+    using AbstractTrees: intree
+
+    rn1 = @rulenode 3{2,Hole[0, 1, 1, 1]}
+    rn2 = @rulenode 3{2,4}
+    rn3 = @rulenode 3{2,3{4,2}}
+
+    equiv = !isdisjoint
+
+    @test intree(rn1, rn2; equiv)
+    @test intree(rn1, rn3; equiv)
+    @test !intree(rn2, rn3; equiv)
+    @test intree(rn1, rn3; equiv)
+    @test !intree(rn2, rn3; equiv)
+
+    rn1_no_overlap_with_rn2 = @rulenode 3{2,Hole[0, 1, 0, 0]}
+
+    @test !intree(rn1_no_overlap_with_rn2, rn2; equiv)
+
+    rn1 = @rulenode 1{2,Hole[0, 0, 1, 0]};
+    rn2 = @rulenode 1{2,Hole[0, 0, 0, 1]};
+
+    @test !intree(rn1, rn2; equiv) # same size/shape, but the hole's domain issubset
+
+    rn3 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+    @test intree(rn1, rn3; equiv) # domain overlaps now
+
+    rn1 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+    rn2 = @rulenode 1{2,3{8,9}};
+
+    @test intree(rn1, rn2; equiv)
+
+    rn1 = @rulenode 3{8,9};
+    rn2 = @rulenode 1{2,3{8,9}};
+
+    @test intree(rn1, rn2; equiv)
+
+    rn3 = @rulenode 1{2,3{7,9}};
+
+    @test !intree(rn1, rn3; equiv) # now it's not a subset because there are no matching subtrees
+end
+
 @testitem "T <: AbstractRuleNode" begin
     using AbstractTrees: children, nodevalue, treeheight
     @testset "AbstractTrees Interface" begin
@@ -7,6 +84,21 @@
         @test treeheight(RuleNode(1)) == 0
         @test treeheight(RuleNode(1, [RuleNode(2), RuleNode(2)])) == 1
     end
+
+    @testset "getindex" begin
+        rn = @rulenode 1{2,3{4,5}}
+        @test rn[1] == @rulenode(2)
+        @test rn[2] == @rulenode(3{4,5})
+        @test rn[1:2] == [@rulenode(2), @rulenode(3{4,5})]
+    end
+
+    @testset "view" begin
+        rn = @rulenode 1{2,3{4,5}}
+        @test view(rn, 1)[] == @rulenode(2)
+        @test view(rn, 2)[] == @rulenode(3{4,5})
+        @test view(rn, 1:2) == [@rulenode(2), @rulenode(3{4,5})]
+    end
+
 
     @testset "RuleNode tests" begin
         @testset "Equality tests" begin
