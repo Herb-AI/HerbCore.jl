@@ -23,6 +23,50 @@ abstract type AbstractRuleNode end
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 
+function construct_zipped_treenode(trees)
+    all_children = map(children, trees)
+    zipped_children = zip(all_children...)
+
+    return (map(nodevalue, trees), collect(zipped_children))
+end
+
+function height_checked_intree(node, root; equiv = ===)
+    node_height = treeheight(node)
+    return any(x -> equiv(x, node), PreOrderDFS(x -> treeheight(x) > node_height, root))
+end
+
+function treezip(trees...)
+    return treemap(construct_zipped_treenode, trees)    
+end
+
+_as_set(x) = x
+_as_set(x::BitVector) = findall(x)
+
+function intersect_zipped_nodevalue(trees)
+    v, ch = construct_zipped_treenode(trees)
+    v_instersect = intersect(_as_set.(v)...)
+
+    return (v_instersect, ch)
+end
+
+function treeintersect(trees...)
+    return treemap(intersect_zipped_nodevalue, trees) 
+end
+
+function nodevalue_isempty(tree)
+    return isempty(nodevalue(tree))
+end
+
+function treeanydisjoint(trees...)
+    dfs_over_intersection = PreOrderDFS(treeintersect(trees...))
+
+    return any(nodevalue_isempty, dfs_over_intersection)
+end
+
+function AbstractTrees.intree(node::AbstractRuleNode, root::AbstractRuleNode)
+    return height_checked_intree(node, root; equiv=!treeanydisjoint)
+end
+
 """
 	RuleNode <: AbstractRuleNode
 
@@ -45,6 +89,8 @@ end
 
 Base.getindex(rn::AbstractRuleNode, inds...) = getindex(get_children(rn), inds...)
 Base.view(rn::AbstractRuleNode, inds...) = view(get_children(rn), inds...)
+AbstractTrees.ChildIndexing(::Type{<:RuleNode}) = AbstractTrees.IndexedChildren()
+
 
 """
 	update_rule_indices!(node::RuleNode, n_rules::Integer)
@@ -111,6 +157,8 @@ The `domain` of a [`AbstractHole`](@ref) defines which rules can be applied.
 The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
 abstract type AbstractHole <: AbstractRuleNode end
+
+AbstractTrees.nodevalue(h::AbstractHole) = h.domain
 
 """
 	Hole <: AbstractHole
