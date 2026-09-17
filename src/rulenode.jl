@@ -179,48 +179,102 @@ function AbstractTrees.intree(rn1::AbstractRuleNode, rn2::AbstractRuleNode; equi
     return intree_rulenodes(rn1, rn2; equiv)
 end
 
-function construct_zipped_treenode(trees)
-    all_children = map(children, trees)
-    zipped_children = zip(all_children...)
-
-    return (map(nodevalue, trees), collect(zipped_children))
-end
-
-function height_checked_intree(node, root; equiv = ===)
-    node_height = treeheight(node)
-    return any(x -> equiv(x, node), PreOrderDFS(x -> treeheight(x) > node_height, root))
-end
-
-function treezip(trees...)
-    return treemap(construct_zipped_treenode, trees)    
-end
-
 _as_set(x) = x
 _as_set(x::BitVector) = findall(x)
 
-function intersect_zipped_nodevalue(trees)
-    v, ch = construct_zipped_treenode(trees)
-    v_instersect = intersect(_as_set.(v)...)
+function isdisjoint_zipped_nodevalue((t1, t2))
+    v1 = _as_set(nodevalue(t1))
+    v2 = _as_set(nodevalue(t2))
+    ch = zip(children(t1), children(t2))
+    v_isdisjoint = isdisjoint(v1, v2)
 
-    return (v_instersect, ch)
+    return (v_isdisjoint, ch)
 end
 
-function treeintersect(trees...)
-    return treemap(intersect_zipped_nodevalue, trees) 
+function treeisdisjoint_at_roots(t1, t2)
+    # would be great to skip the treemap and do this lazily instead
+    isdisjoint_tree = treemap(isdisjoint_zipped_nodevalue, (t1, t2)) 
+
+    return any(nodevalue, PreOrderDFS(isdisjoint_tree))
 end
+treeisdisjoint_at_roots(t1) = t2 -> treeisdisjoint_at_roots(t1, t2)
 
-function nodevalue_isempty(tree)
-    return isempty(nodevalue(tree))
-end
+"""
+    treeisdisjoint(t1, t2)
 
-function treeanydisjoint(trees...)
-    dfs_over_intersection = PreOrderDFS(treeintersect(trees...))
+Determine whether trees `t1` and `t2` are disjoint from one another.
 
-    return any(nodevalue_isempty, dfs_over_intersection)
-end
+If the two trees are the same size and shape, then they are disjoint when any of
+their rule indices or domains are disjoint.
 
-function AbstractTrees.intree(node::AbstractRuleNode, root::AbstractRuleNode)
-    return height_checked_intree(node, root; equiv=!treeanydisjoint)
+```jldoctest
+julia> rn1 = @rulenode 1{2,Hole[0, 0, 1, 0]};
+
+julia> rn2 = @rulenode 1{2,Hole[0, 0, 0, 1]};
+
+julia> treeisdisjoint(rn1, rn2) # same size/shape, but the hole's domain isdisjoint
+true
+
+julia> rn3 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+julia> treeisdisjoint(rn1, rn3) # domain overlaps now
+false
+```
+
+If one tree is smaller than the other, then this checks that there is no
+subtree within the larger tree that intersects with the smaller tree. 
+
+```
+julia> rn1 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+julia> rn2 = @rulenode 1{2,3{8,9}};
+
+julia> treeisdisjoint(rn1, rn2)
+false
+```
+
+In the above example, the smaller tree overlaps with the subtree `1{2,3{...}`. The
+rest of the subtree below the `3` is can be ignored since the children of the
+[`Hole`](@ref) are unknown.
+
+Finally, the trees are not disjoint if there is a subtree that exactly matches
+the smaller of the two trees.
+
+```
+julia> rn1 = @rulenode 3{8,9};
+
+julia> rn2 = @rulenode 1{2,3{8,9}};
+
+julia> treeisdisjoint(rn1, rn2)
+false
+
+julia> rn3 = @rulenode 1{2,3{7,9}};
+
+julia> treeisdisjoint(rn1, rn3) 
+true
+```
+In the last example, they're disjoint because there are no matching subtrees
+(`3{8,9}` changed to `3{7,9}`).
+"""
+function treeisdisjoint(t1, t2)
+    height_t1 = treeheight(t1)
+    height_t2 = treeheight(t2)
+
+    if height_t1 > height_t2
+        height_node = height_t2
+        node = t2
+        root = t1
+    else
+        height_node = height_t1
+        node = t1
+        root = t2
+    end
+    
+    leaf_pred = n -> treeheight(n) >= height_node
+    dfs_of_at_least_node_size = Iterators.filter(leaf_pred, PreOrderDFS(root))
+    isdisjoint_with_node = treeisdisjoint_at_roots(node)
+
+    return all(isdisjoint_with_node, dfs_of_at_least_node_size)
 end
 
 """

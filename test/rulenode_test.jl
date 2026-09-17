@@ -96,7 +96,7 @@ end
 end
 
 @testitem "T <: AbstractRuleNode" begin
-    using AbstractTrees: children, nodevalue, treeheight, intree
+    using AbstractTrees: children, nodevalue, treeheight
     @testset "AbstractTrees Interface" begin
         @test nodevalue(RuleNode(1)) == 1
         @test isempty(children(RuleNode(1)))
@@ -119,16 +119,47 @@ end
         @test view(rn, 1:2) == [@rulenode(2), @rulenode(3{4,5})]
     end
 
-    @testset "intree" begin
-        rn1 = @rulenode 3{2,Hole[0, 1, 1]}
-        rn2 = @rulenode 3{2,3}
+    @testset "treeisdisjoint" begin
+        rn1 = @rulenode 3{2,Hole[0, 1, 1, 1]}
+        rn2 = @rulenode 3{2,4}
+        rn3 = @rulenode 3{2,3{4,2}}
 
-        @test intree(rn1, rn2)
-        @test intree(rn1, rn2)
+        @test !treeisdisjoint(rn1, rn2)
+        @test !treeisdisjoint(rn2, rn1)
+        @test !treeisdisjoint(rn1, rn3)
+        @test !treeisdisjoint(rn3, rn1)
+        @test treeisdisjoint(rn2, rn3)
+        @test treeisdisjoint(rn3, rn2)
 
-        rn1_no_overlap_with_rn2 = @rulenode 3{2,Hole[0, 1, 0]}
+        rn1_no_overlap_with_rn2 = @rulenode 3{2,Hole[0, 1, 0, 0]}
 
-        @test !intree(rn1_no_overlap_with_rn2, rn2)
+        @test treeisdisjoint(rn1_no_overlap_with_rn2, rn2)
+        @test treeisdisjoint(rn2, rn1_no_overlap_with_rn2)
+
+        @testset "From doctest" begin
+            rn1 = @rulenode 1{2,Hole[0, 0, 1, 0]};
+            rn2 = @rulenode 1{2,Hole[0, 0, 0, 1]};
+
+            @test treeisdisjoint(rn1, rn2) # same size/shape, but the hole's domain isdisjoint
+
+            rn3 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+            @test !treeisdisjoint(rn1, rn3) # domain overlaps now
+
+            rn1 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+            rn2 = @rulenode 1{2,3{8,9}};
+
+            @test !treeisdisjoint(rn1, rn2)
+
+            rn1 = @rulenode 3{8,9};
+            rn2 = @rulenode 1{2,3{8,9}};
+
+            @test !treeisdisjoint(rn1, rn2)
+
+            rn3 = @rulenode 1{2,3{7,9}};
+
+            @test treeisdisjoint(rn1, rn3) # now they're disjoint because there are no matching subtrees
+        end
     end
 
     @testset "RuleNode tests" begin
