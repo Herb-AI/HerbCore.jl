@@ -19,9 +19,111 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
+Base.getindex(rn::AbstractRuleNode, inds...) = getindex(get_children(rn), inds...)
+Base.view(rn::AbstractRuleNode, inds...) = view(get_children(rn), inds...)
+
 # Interface to AbstractTrees.jl
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
+AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedChildren()
+
+_as_set(x) = x
+_as_set(x::BitVector) = findall(x)
+
+function isdisjoint_zipped_nodevalue((t1, t2))
+    v1 = _as_set(nodevalue(t1))
+    v2 = _as_set(nodevalue(t2))
+    ch = zip(children(t1), children(t2))
+    v_isdisjoint = isdisjoint(v1, v2)
+
+    return (v_isdisjoint, ch)
+end
+
+function treeisdisjoint_at_roots(t1, t2)
+    # would be great to skip the treemap and do this lazily instead
+    isdisjoint_tree = treemap(isdisjoint_zipped_nodevalue, (t1, t2)) 
+
+    return any(nodevalue, PreOrderDFS(isdisjoint_tree))
+end
+treeisdisjoint_at_roots(t1) = t2 -> treeisdisjoint_at_roots(t1, t2)
+
+"""
+    treeisdisjoint(t1, t2)
+
+Determine whether trees `t1` and `t2` are disjoint from one another.
+
+If the two trees are the same size and shape, then they are disjoint when any of
+their rule indices or domains are disjoint.
+
+```jldoctest
+julia> rn1 = @rulenode 1{2,Hole[0, 0, 1, 0]};
+
+julia> rn2 = @rulenode 1{2,Hole[0, 0, 0, 1]};
+
+julia> treeisdisjoint(rn1, rn2) # same size/shape, but the hole's domain isdisjoint
+true
+
+julia> rn3 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+julia> treeisdisjoint(rn1, rn3) # domain overlaps now
+false
+```
+
+If one tree is smaller than the other, then this checks that there is no
+subtree within the larger tree that intersects with the smaller tree. 
+
+```
+julia> rn1 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+julia> rn2 = @rulenode 1{2,3{8,9}};
+
+julia> treeisdisjoint(rn1, rn2)
+false
+```
+
+In the above example, the smaller tree overlaps with the subtree `1{2,3{...}`. The
+rest of the subtree below the `3` is can be ignored since the children of the
+[`Hole`](@ref) are unknown.
+
+Finally, the trees are not disjoint if there is a subtree that exactly matches
+the smaller of the two trees.
+
+```
+julia> rn1 = @rulenode 3{8,9};
+
+julia> rn2 = @rulenode 1{2,3{8,9}};
+
+julia> treeisdisjoint(rn1, rn2)
+false
+
+julia> rn3 = @rulenode 1{2,3{7,9}};
+
+julia> treeisdisjoint(rn1, rn3) 
+true
+```
+In the last example, they're disjoint because there are no matching subtrees
+(`3{8,9}` changed to `3{7,9}`).
+"""
+function treeisdisjoint(t1, t2)
+    height_t1 = treeheight(t1)
+    height_t2 = treeheight(t2)
+
+    if height_t1 > height_t2
+        height_node = height_t2
+        node = t2
+        root = t1
+    else
+        height_node = height_t1
+        node = t1
+        root = t2
+    end
+    
+    leaf_pred = n -> treeheight(n) >= height_node
+    dfs_of_at_least_node_size = Iterators.filter(leaf_pred, PreOrderDFS(root))
+    isdisjoint_with_node = treeisdisjoint_at_roots(node)
+
+    return all(isdisjoint_with_node, dfs_of_at_least_node_size)
+end
 
 """
 	RuleNode <: AbstractRuleNode
@@ -108,6 +210,8 @@ The `domain` of a [`AbstractHole`](@ref) defines which rules can be applied.
 The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
 abstract type AbstractHole <: AbstractRuleNode end
+
+AbstractTrees.nodevalue(h::AbstractHole) = h.domain
 
 """
 	Hole <: AbstractHole

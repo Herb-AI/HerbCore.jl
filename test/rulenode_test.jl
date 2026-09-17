@@ -8,6 +8,63 @@
         @test treeheight(RuleNode(1, [RuleNode(2), RuleNode(2)])) == 1
     end
 
+    @testset "getindex" begin
+        rn = @rulenode 1{2,3{4,5}}
+        @test rn[1] == @rulenode(2)
+        @test rn[2] == @rulenode(3{4,5})
+        @test rn[1:2] == [@rulenode(2), @rulenode(3{4,5})]
+    end
+
+    @testset "view" begin
+        rn = @rulenode 1{2,3{4,5}}
+        @test view(rn, 1)[] == @rulenode(2)
+        @test view(rn, 2)[] == @rulenode(3{4,5})
+        @test view(rn, 1:2) == [@rulenode(2), @rulenode(3{4,5})]
+    end
+
+    @testset "treeisdisjoint" begin
+        rn1 = @rulenode 3{2,Hole[0, 1, 1, 1]}
+        rn2 = @rulenode 3{2,4}
+        rn3 = @rulenode 3{2,3{4,2}}
+
+        @test !treeisdisjoint(rn1, rn2)
+        @test !treeisdisjoint(rn2, rn1)
+        @test !treeisdisjoint(rn1, rn3)
+        @test !treeisdisjoint(rn3, rn1)
+        @test treeisdisjoint(rn2, rn3)
+        @test treeisdisjoint(rn3, rn2)
+
+        rn1_no_overlap_with_rn2 = @rulenode 3{2,Hole[0, 1, 0, 0]}
+
+        @test treeisdisjoint(rn1_no_overlap_with_rn2, rn2)
+        @test treeisdisjoint(rn2, rn1_no_overlap_with_rn2)
+
+        @testset "From doctest" begin
+            rn1 = @rulenode 1{2,Hole[0, 0, 1, 0]};
+            rn2 = @rulenode 1{2,Hole[0, 0, 0, 1]};
+
+            @test treeisdisjoint(rn1, rn2) # same size/shape, but the hole's domain isdisjoint
+
+            rn3 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+
+            @test !treeisdisjoint(rn1, rn3) # domain overlaps now
+
+            rn1 = @rulenode 1{2,Hole[0, 0, 1, 1]};
+            rn2 = @rulenode 1{2,3{8,9}};
+
+            @test !treeisdisjoint(rn1, rn2)
+
+            rn1 = @rulenode 3{8,9};
+            rn2 = @rulenode 1{2,3{8,9}};
+
+            @test !treeisdisjoint(rn1, rn2)
+
+            rn3 = @rulenode 1{2,3{7,9}};
+
+            @test treeisdisjoint(rn1, rn3) # now they're disjoint because there are no matching subtrees
+        end
+    end
+
     @testset "RuleNode tests" begin
         @testset "Equality tests" begin
             @test RuleNode(1) == RuleNode(1)

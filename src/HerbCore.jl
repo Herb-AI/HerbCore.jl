@@ -37,6 +37,7 @@ export
     print_tree,
     update_rule_indices!,
     is_domain_valid,
-    issame
+    issame,
+    treeisdisjoint
 
 end # module HerbCore
