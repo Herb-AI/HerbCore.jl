@@ -1,5 +1,7 @@
 using BenchmarkTools: @benchmarkable, BenchmarkGroup
 using HerbCore
+using HerbCore: all_tree, zipnodes
+using AbstractTrees: intree
 
 include("examples.jl")
 
@@ -31,6 +33,20 @@ function bench_get_node_at_location()
             suite[name] = @benchmarkable get_node_at_location(tree, $l) setup=(tree=$setup_fn())
         end
     end
+
+    return suite
+end
+
+function bench_intree()
+    suite = BenchmarkGroup(["rulenodes", "iteration"])
+    rn1 = @rulenode 3{2,Hole[0, 1, 1, 1]}
+    rn2 = @rulenode 3{2,4}
+    rn3 = @rulenode 3{2,3{4,2}}
+
+    suite["overlapping domain"] = @benchmarkable intree(
+        $rn1, $rn2;
+        equiv = $((rn1, rn2) -> all_tree(!isdisjoint, rn1, rn2))
+    )
 
     return suite
 end
