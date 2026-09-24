@@ -22,6 +22,114 @@ abstract type AbstractRuleNode end
 # Interface to AbstractTrees.jl
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
+AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedChildren()
+
+"""
+    children_known(T)
+
+Whether type `T` has known children.
+
+By default, this is true. A [`RuleNode`](@ref), for example has children.
+There may be 0 children, but it is explicitly 0 children in that case.
+
+In contrast, a [`Hole`](@ref) struct does not have children, but the
+[`Hole`](@ref) can be refined to have children by choosing a rule in its domain
+and transforming it into a [`RuleNode`](@ref) or [`UniformHole`](@ref).
+"""
+children_known(::Type{<:AbstractRuleNode}) = true
+
+struct ZipNode{N<:Tuple} <: AbstractRuleNode
+    nodes::N
+end
+ZipNode(nodes...) = ZipNode(nodes)
+
+"""
+    zipnodes(nodes...)
+
+Lazily construct a zipped version of the trees rooted at `nodes`.
+
+Essentially, like `zip`, but for trees.
+
+The `AbstractTrees.nodevalue` of each node is a tuple of the node values
+of each of the `nodes`. The `AbstractTrees.children` of each node is a list of
+tuples of the children of each of the nodes. First children in the first tuple,
+second children in the second tuple, etc.
+
+The `nodevalue` becomes `children_incompatible` when the children of each of
+the nodes are not compatible. Children are compatible if they have equal
+lengths, ignoring the children of nodes that have unknown children (like
+[`Hole`](@ref)s). See: [`children_known`](@ref) for the trait that describes
+whether children are known or not.
+
+```jldoctest
+julia> rn1 = @rulenode 1{2,3};
+
+julia> rn2 = @rulenode 3;
+
+julia> zn = zipnodes(rn1, rn2) 
+zipnodes(1{2,3}, 3)
+
+julia> nodevalue(zn)
+(children_incompatible, children_incompatible)
+```
+
+The value of the node is `children_incompatible` because `rn1` has two children
+while `rn2` has none, and both are [`RuleNode`](@ref)s which have definite
+children. This is in contrast to a [`Hole`](@ref), which has no children, but
+represents a node that *might* have children. If `rn1` above is swapped out
+with a [`Hole`](@ref), the nodevalue is no longer `missing`.
+
+```jldoctest
+julia> rn1 = @rulenode Hole[1, 1, 1]
+
+julia> rn2 = @rulenode 3;
+
+julia> zn = zipnodes(rn1, rn2) 
+zipnodes(Hole[Bool[1, 1, 1]], 3)
+
+julia> nodevalue(zn)
+(Bool[1, 1, 1], 3)
+```
+"""
+zipnodes(nodes...) = ZipNode(nodes...)
+Base.zip(nodes::Vararg{<:AbstractRuleNode}) = zipnodes(nodes...)
+Base.show(io::IO, z::ZipNode) = Base.show_delim_array(io, z.nodes, "zip(", ',', ')', false)
+AbstractTrees.children(z::ZipNode) = ZipNode.(zip(children.(z.nodes)...))
+
+function _children_compatible(z::ZipNode{T}) where T
+    # Holes have unknown children, other nodes have known children by default
+    ch_known_T = children_known.(fieldtypes(T))
+    ch_lengths = length.(children.(z.nodes))
+    def_and_ls = zip(ch_known_T, ch_lengths)
+    length_or_missing = ((known, length),) -> known ? length : missing
+
+    # All of the lengths of the children of nodes that have known
+    # children
+    lengths_def_ch = skipmissing(
+        Iterators.map(length_or_missing, def_and_ls)
+    )
+    return allequal(lengths_def_ch)
+end
+
+# like missing, but with different behavior on `isdisjoint` and `issubset`
+# namely, the incompatibility propagates over set checks
+struct ChildrenIncompatible end
+const children_incompatible = ChildrenIncompatible()
+isincompatible(::Any) = false
+isincompatible(::ChildrenIncompatible) = true
+Base.isdisjoint(::T, ::T) where T<:ChildrenIncompatible = children_incompatible
+Base.issubset(::T, ::T) where T<:ChildrenIncompatible = children_incompatible
+Base.to_index(::ChildrenIncompatible) = children_incompatible
+Base.:(!)(::ChildrenIncompatible) = children_incompatible
+skipincompatible(itr) = Iterators.filter(!isincompatible, itr)
+
+function AbstractTrees.nodevalue(z::ZipNode{T}) where T
+    ch_compat = _children_compatible(z)
+    if !ch_compat
+        return ntuple(Returns(children_incompatible), length(z.nodes))
+    end
+    return nodevalue.(z.nodes)
+end
 
 """
 	RuleNode <: AbstractRuleNode
@@ -108,6 +216,8 @@ The `domain` of a [`AbstractHole`](@ref) defines which rules can be applied.
 The `domain` is a bitvector, where the `i`th bit is set to true if the `i`th rule in the grammar can be applied.
 """
 abstract type AbstractHole <: AbstractRuleNode end
+
+AbstractTrees.nodevalue(h::AbstractHole) = h.domain
 
 """
 	Hole <: AbstractHole
@@ -201,6 +311,7 @@ end
 mutable struct Hole <: AbstractHole
     domain::BitVector
 end
+children_known(::Type{<:Hole}) = false
 
 """
 	HoleReference
