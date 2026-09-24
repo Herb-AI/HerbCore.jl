@@ -39,6 +39,23 @@ AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedC
 #
 has_definite_children(::Type) = true
 
+struct PathNode{R<:AbstractRuleNode,I} <: AbstractRuleNode
+    node::R
+    path::Vector{I}
+
+    function PathNode(node::R, path::Vector{I}=Int[]) where {R, I}
+        return new{R, I}(node, path)
+    end
+end
+paths(rn::AbstractRuleNode) = PreOrderDFS(PathNode(rn))
+AbstractTrees.nodevalue(pn::PathNode) = (pn.path, pn.node)
+function AbstractTrees.children(pn::PathNode)
+    ch = children(pn.node)
+    enum_ch = enumerate(ch)
+    paths_ch = vcat.((pn.path,), first.(enum_ch))
+    return splat(PathNode).(zip(ch, paths_ch))
+end
+
 struct ZipNode{N<:Tuple} <: AbstractRuleNode
     nodes::N
 end
