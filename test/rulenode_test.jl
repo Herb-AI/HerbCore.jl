@@ -95,6 +95,17 @@ end
     @test !intree(rn1, rn3; equiv) # now it's not a subset because there are no matching subtrees
 end
 
+@testitem "path iterator" begin
+    using AbstractTrees: nodevalue
+    using HerbCore: paths
+
+    rn1 = @rulenode 1{2,3}
+    expect = [(Int[], @rulenode(1{2,3})), ([1], @rulenode(2)), ([2], @rulenode(3))]
+    got = nodevalue.(paths(rn1))
+    
+    @test got == expect
+end
+
 @testitem "T <: AbstractRuleNode" begin
     using AbstractTrees: children, nodevalue, treeheight
     @testset "AbstractTrees Interface" begin

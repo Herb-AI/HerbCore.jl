@@ -20,9 +20,6 @@ Expression trees consist of [`RuleNode`](@ref)s and [`AbstractHole`](@ref)s.
 """
 abstract type AbstractRuleNode end
 
-Base.getindex(rn::AbstractRuleNode, inds...) = getindex(get_children(rn), inds...)
-Base.view(rn::AbstractRuleNode, inds...) = view(get_children(rn), inds...)
-
 # Interface to AbstractTrees.jl
 AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
