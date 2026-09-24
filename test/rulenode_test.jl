@@ -32,7 +32,27 @@ end
     @test prod(rn2) == 9
 end
 
-@testitem "intree when all !isdisjoint" begin
+@testitem "zip nodes" begin
+    using AbstractTrees: PreOrderDFS, nodevalue
+    using HerbCore: children_incompatible
+
+    rn1 = @rulenode 1{2,3}
+    rn2 = @rulenode 4{5,6}
+    
+    @test nodevalue.(collect(PreOrderDFS(zip(rn1, rn2)))) == [(1,4), (2,5), (3,6)]
+    
+    h1 = @rulenode Hole[1, 0, 0, 1, 0, 0]
+    
+    @test nodevalue.(collect(PreOrderDFS(zip(h1, rn1)))) == [([1, 4], 1)]
+
+    different_shape = @rulenode 3
+
+    node_values = nodevalue.(collect(PreOrderDFS(zip(different_shape, rn1))))
+    
+    @test only(node_values) == (children_incompatible, children_incompatible)
+end
+
+@testitem "intree with !isdisjoint" begin
     using AbstractTrees: intree
 
     rn1 = @rulenode 3{2,Hole[0, 1, 1, 1]}
