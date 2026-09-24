@@ -311,8 +311,8 @@ mutable struct RuleNode <: AbstractRuleNode
     children::Vector{AbstractRuleNode}
 end
 
-Base.getindex(rn::AbstractRuleNode, inds...) = getindex(get_children(rn), inds...)
-Base.view(rn::AbstractRuleNode, inds...) = view(get_children(rn), inds...)
+Base.getindex(rn::AbstractRuleNode, inds...) = getindex(children(rn), inds...)
+Base.view(rn::AbstractRuleNode, inds...) = view(children(rn), inds...)
 AbstractTrees.ChildIndexing(::Type{<:RuleNode}) = AbstractTrees.IndexedChildren()
 
 
@@ -329,7 +329,7 @@ function update_rule_indices!(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
         error("Rule index $(get_rule(node)) exceeds the number of grammar rules ($n_rules).")
     end
-    children = get_children(node)
+    children = children(node)
     for child in children
         update_rule_indices!(child, n_rules)
     end
@@ -370,7 +370,7 @@ function is_domain_valid(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
         return false
     end
-    return all(child -> is_domain_valid(child, n_rules), get_children(node))
+    return all(child -> is_domain_valid(child, n_rules), children(node))
 end
 
 """
@@ -404,14 +404,14 @@ mutable struct UniformHole <: AbstractUniformHole
 end
 
 UniformHole(domain) = UniformHole(domain, AbstractRuleNode[])
-Base.getindex(uh::UniformHole, inds...) = getindex(get_children(uh), inds...)
+Base.getindex(uh::UniformHole, inds...) = getindex(children(uh), inds...)
 
 # Check if `hole`'s domain length matches `n_rules`.
 function is_domain_valid(hole::AbstractHole, n_rules::Integer)
     if length(hole.domain) != n_rules
         return false
     end
-    return all(child -> is_domain_valid(child, n_rules), get_children(hole))
+    return all(child -> is_domain_valid(child, n_rules), children(hole))
 end
 
 """
@@ -428,7 +428,7 @@ function update_rule_indices!(hole::AbstractHole, n_rules::Integer)
         error("Length domain vector $(length(hole.domain)) exceeds the number of grammar rules $(n_rules).")
     end
     append!(hole.domain, falses(n_rules - length(hole.domain)))
-    children = get_children(hole)
+    children = children(hole)
     for child in children
         update_rule_indices!(child, n_rules)
     end
@@ -461,7 +461,7 @@ function update_rule_indices!(
             hole.domain[mapping[i]] = 1 # set new index to true
         end
     end
-    children = get_children(hole)
+    children = children(hole)
     for child in children
         update_rule_indices!(child, n_rules, mapping)
     end
@@ -649,7 +649,7 @@ end
 
 function Base.hash(node::UniformHole, x::UInt)
     x = hash(node.domain)
-    for child in get_children(node)
+    for child in children(node)
         x = hash(child, x)
     end
     return x
@@ -680,7 +680,7 @@ Return the number of nodes in the tree rooted at root.
 """
 function Base.length(root::AbstractRuleNode)
     retval = 1
-    for c in get_children(root)
+    for c in children(root)
         retval += length(c)
     end
     return retval
@@ -708,7 +708,7 @@ function _rulenode_compare(rn₁::AbstractRuleNode, rn₂::AbstractRuleNode)::In
         throw(ArgumentError("Unable to compare nodes of types ($(typeof(rn₁)), $(typeof(rn₂)))"))
     end
     if get_rule(rn₁) == get_rule(rn₂)
-        for (c₁, c₂) in zip(get_children(rn₁), get_children(rn₂))
+        for (c₁, c₂) in zip(children(rn₁), children(rn₂))
             comparison = _rulenode_compare(c₁, c₂)
             if comparison ≠ 0
                 return comparison
@@ -865,10 +865,10 @@ Extract the derivation sequence from a path (sequence of child indices) and an [
 If the path is deeper than the deepest node, it returns what it has.
 """
 function get_rulesequence(node::RuleNode, path::Vector{Int})
-    if node.ind == 0 # sign for empty node
+    if nodevalue(node) == 0 # sign for empty node
         return Vector{Int}()
-    elseif isempty(node.children) # no childnen, nowehere to follow the path; still return the index
-        return [node.ind]
+    elseif isempty(children(node)) # no children, nowehere to follow the path; still return the index
+        return [nodevalue(node)]
     elseif isempty(path)
         return [node.ind]
     elseif isassigned(path, 2)
@@ -959,7 +959,7 @@ function get_path(
     if root === targetnode
         return Vector{Int}()
     end
-    for (i, child) in enumerate(get_children(root))
+    for (i, child) in enumerate(children(root))
         path = get_path(child, targetnode)
         if !isnothing(path)
             return prepend!(path, i)
@@ -1070,8 +1070,8 @@ RuleNode(9, [
 have the same shape: 1 root with 2 children.
 """
 function have_same_shape(node1, node2)
-    children1 = get_children(node1)
-    children2 = get_children(node2)
+    children1 = children(node1)
+    children2 = children(node2)
     if length(children1) != length(children2)
         return false
     end
