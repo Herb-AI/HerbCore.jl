@@ -327,8 +327,7 @@ function update_rule_indices!(node::RuleNode, n_rules::Integer)
     if get_rule(node) > n_rules
         error("Rule index $(get_rule(node)) exceeds the number of grammar rules ($n_rules).")
     end
-    children = children(node)
-    for child in children
+    for child in children(node)
         update_rule_indices!(child, n_rules)
     end
     return
@@ -356,8 +355,7 @@ function update_rule_indices!(
     if haskey(mapping, rule_ind)
         node.ind = mapping[rule_ind]
     end
-    children = get_children(node)
-    for child in children
+    for child in children(node)
         update_rule_indices!(child, n_rules, mapping)
     end
     return
@@ -426,8 +424,7 @@ function update_rule_indices!(hole::AbstractHole, n_rules::Integer)
         error("Length domain vector $(length(hole.domain)) exceeds the number of grammar rules $(n_rules).")
     end
     append!(hole.domain, falses(n_rules - length(hole.domain)))
-    children = children(hole)
-    for child in children
+    for child in children(hole)
         update_rule_indices!(child, n_rules)
     end
     return
@@ -459,8 +456,7 @@ function update_rule_indices!(
             hole.domain[mapping[i]] = 1 # set new index to true
         end
     end
-    children = children(hole)
-    for child in children
+    for child in children(hole)
         update_rule_indices!(child, n_rules, mapping)
     end
     return
@@ -541,11 +537,11 @@ function _shorthand2rulenode(ex::Expr)
     # rulenodes without children
     ex = postwalk(ex) do x
         @capture(x, {children__}) || return x
-        children = [
+        ch = [
             isexpr(child, Int, Integer) ? :(RuleNode($child)) : child
                 for child in children
         ]
-        return :([$(children...)])
+        return :([$(ch...)])
     end
 
     return ex
