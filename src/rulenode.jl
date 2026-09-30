@@ -25,18 +25,10 @@ AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedChildren()
 
-# struct ZipNode{Ns<:Tuple} <: AbstractRuleNode
-#     nodes::Ns
-# end
-# ZipNode(nodes...) = ZipNode(nodes)
-# AbstractTrees.children(z::ZipNode) = ZipNode.(zip(children.(z.nodes)...))
-# function AbstractTrees.nodevalue(z::ZipNode)
-#     return nodevalue.(z.nodes)
-# end
-# Base.zip(nodes::Vararg{<:AbstractRuleNode}; strict = false) = zipnodes(nodes...; strict)
-# Base.eltype(::Type{Z}) where {Ns, Z <: ZipNode{Ns}} = fieldtypes(Ns) 
-# Base.show(io::IO, z::ZipNode) = Base.show_delim_array(io, z.nodes, "zipnodes(", ',', ')', false)
-#
+function Base.in(v, rn::AbstractRuleNode)
+    return v in nodevalue(rn)
+end
+
 has_definite_children(::Type) = true
 
 struct PathNode{R<:AbstractRuleNode,I} <: AbstractRuleNode
