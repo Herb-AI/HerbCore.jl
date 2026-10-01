@@ -597,12 +597,8 @@ Create a [`RuleNode`](@ref) for the [`AbstractGrammar`](@ref) rule with index `i
 """
 RuleNode(ind::Int, _val::Any) = RuleNode(ind, _val, AbstractRuleNode[])
 
-Base.:(==)(::RuleNode, ::AbstractHole) = false
-Base.:(==)(::AbstractHole, ::RuleNode) = false
-function Base.:(==)(A::RuleNode, B::RuleNode)
-    return (A.ind == B.ind) && A.children == B.children
-        # length(A.children) == length(B.children) && #required because zip doesn't check lengths
-        # all(isequal(a, b) for (a, b) in zip(A.children, B.children))
+function Base.:(==)(A::AbstractRuleNode, B::AbstractRuleNode)
+    return nodevalue(A) == nodevalue(B) && children(A) == children(B)
 end
 function Base.:(==)(a::UniformHole, b::UniformHole)
     return a.domain == b.domain && a.children == b.children ##length(a.children) == length(b.children) &&
