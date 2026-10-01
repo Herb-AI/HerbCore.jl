@@ -121,8 +121,14 @@ struct ChildrenIncompatible end
 const children_incompatible = ChildrenIncompatible()
 isincompatible(::Any) = false
 isincompatible(::ChildrenIncompatible) = true
-Base.isdisjoint(::T, ::T) where T<:ChildrenIncompatible = children_incompatible
-Base.issubset(::T, ::T) where T<:ChildrenIncompatible = children_incompatible
+Base.hasfastin(::Type{<:ChildrenIncompatible}) = true
+Base.in(::Any, ::ChildrenIncompatible) = false
+Base.IteratorSize(::Type{<:ChildrenIncompatible}) = Base.HasShape{0}()
+Base.iterate(::ChildrenIncompatible) = (children_incompatible, nothing)
+Base.iterate(::ChildrenIncompatible, ::Any) = nothing
+Base.size(::ChildrenIncompatible) = ()
+Base.eltype(::ChildrenIncompatible) = children_incompatible
+Base.length(::ChildrenIncompatible) = 1
 Base.to_index(::ChildrenIncompatible) = children_incompatible
 Base.:(!)(::ChildrenIncompatible) = children_incompatible
 skipincompatible(itr) = Iterators.filter(!isincompatible, itr)
