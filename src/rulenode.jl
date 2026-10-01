@@ -25,10 +25,6 @@ AbstractTrees.children(node::AbstractRuleNode) = get_children(node)
 AbstractTrees.nodevalue(node::AbstractRuleNode) = get_rule(node)
 AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedChildren()
 
-function Base.in(v, rn::AbstractRuleNode)
-    return v in nodevalue(rn)
-end
-
 has_definite_children(::Type) = true
 
 struct PathNode{R<:AbstractRuleNode,I} <: AbstractRuleNode
