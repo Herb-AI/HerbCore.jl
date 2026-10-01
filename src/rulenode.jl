@@ -45,7 +45,10 @@ Base.iterate(pn::PathNode, i=1) = i > 2 ? nothing : (getfield(pn, i), 2)
 struct ZipNode{N<:Tuple} <: AbstractRuleNode
     nodes::N
 end
+nodes(zn::ZipNode) = zn.nodes
 ZipNode(nodes...) = ZipNode(nodes)
+Base.:(==)(z1::ZipNode, z2::ZipNode) = z1.nodes == z2.nodes
+Base.hash(z1::ZipNode, x::UInt) = hash(z1.nodes, x)
 
 """
     zipnodes(nodes...; strict = false)
@@ -92,7 +95,7 @@ julia> nodevalue(zn)
 ```
 """
 zipnodes(nodes...) = ZipNode(nodes...)
-# Base.eltype(::Type{<:ZipNode{Z}}) where Z = eltype(Z)
+Base.eltype(::Type{<:ZipNode{Z}}) where Z = eltype(Z)
 Base.zip(nodes::Vararg{<:AbstractRuleNode}) = zipnodes(nodes...)
 Base.show(io::IO, z::ZipNode) = Base.show_delim_array(io, z.nodes, "zip(", ',', ')', false)
 AbstractTrees.children(z::ZipNode) = ZipNode.(zip(children.(z.nodes)...))
