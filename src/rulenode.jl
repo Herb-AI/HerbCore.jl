@@ -27,11 +27,16 @@ AbstractTrees.ChildIndexing(::Type{<:AbstractRuleNode}) = AbstractTrees.IndexedC
 
 has_definite_children(::Type) = true
 
-struct PathNode{R<:AbstractRuleNode,I} <: AbstractRuleNode
-    path::Vector{I}
+struct PathNode{R<:AbstractRuleNode,N,I} <: AbstractRuleNode
+    path::NTuple{N, I}
     node::R
+    function PathNode(node::R) where R <: AbstractRuleNode
+        new{R, 0, Int}((), node)
+    end
+    function PathNode(::Tuple{}, node::R) where R <: AbstractRuleNode
+        new{R, 0, Int}((), node)
+    end
 end
-PathNode(node) = PathNode(Int[], node)
 paths(rn::AbstractRuleNode) = PreOrderDFS(PathNode(rn))
 AbstractTrees.nodevalue(pn::PathNode) = (pn.path, pn.node)
 function AbstractTrees.children(pn::PathNode)
@@ -931,7 +936,7 @@ julia> get_node_at_location(rn, Int[])
 1{2{3,4},5}
 ```
 """
-function get_node_at_location(root::AbstractRuleNode, location::AbstractVector{<:Integer})
+function get_node_at_location(root::AbstractRuleNode, location)
     return getdescendant(root, location)
 end
 
